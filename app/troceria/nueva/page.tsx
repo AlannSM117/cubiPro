@@ -1,0 +1,409 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import { supabase } from '@/lib/supabase';
+import { ArrowLeft, Plus, Save, Trash2, FileText, Layers } from 'lucide-react';
+
+type TrozaForm = {
+  id: string;
+  diametro_1: number;
+  diametro_2: number;
+  largo: number;
+  volumen_m3: number;
+  descuento_porcentaje: number;
+  volumen_total: number;
+};
+
+const turnoAserraderoMap: Record<string, number> = {
+  'Matutino': 1,
+  'Vespertino': 2,
+  'Nocturno': 3,
+};
+
+const claseTypeMap: Record<string, string> = {
+  '1': 'Primario',
+  '2': 'Secundario',
+};
+
+export default function NuevaEntradaPage() {
+  const router = useRouter();
+  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 16));
+  const [turno, setTurno] = useState('Matutino');
+  const [origen, setOrigen] = useState('S');
+  const [clase, setClase] = useState('1');
+  const [trozas, setTrozas] = useState<TrozaForm[]>([
+    {
+      id: crypto.randomUUID(),
+      diametro_1: 0,
+      diametro_2: 0,
+      largo: 0,
+      volumen_m3: 0,
+      descuento_porcentaje: 0,
+      volumen_total: 0,
+    },
+  ]);
+
+  function calcularVolumen(troza: TrozaForm) {
+    const diametroPromedio = (troza.diametro_1 + troza.diametro_2) / 2;
+    const radio = diametroPromedio / 2 / 100;
+    const largoMetros = troza.largo / 100;
+    const volumen = Math.PI * radio * radio * largoMetros;
+    const descuento = volumen * (troza.descuento_porcentaje / 100);
+    return {
+      volumen_m3: volumen,
+      volumen_total: volumen - descuento,
+    };
+  }
+
+  function handleTrozaChange(id: string, field: keyof TrozaForm, value: any) {
+    setTrozas((prev) =>
+      prev.map((troza) => {
+        if (troza.id === id) {
+          const updated = { ...troza, [field]: value };
+          if (
+            field === 'diametro_1' ||
+            field === 'diametro_2' ||
+            field === 'largo' ||
+            field === 'descuento_porcentaje'
+          ) {
+            const volumenes = calcularVolumen(updated);
+            return { ...updated, ...volumenes };
+          }
+          return updated;
+        }
+        return troza;
+      })
+    );
+  }
+
+  function agregarTroza() {
+    setTrozas([
+      ...trozas,
+      {
+        id: crypto.randomUUID(),
+        diametro_1: 0,
+        diametro_2: 0,
+        largo: 0,
+        volumen_m3: 0,
+        descuento_porcentaje: 0,
+        volumen_total: 0,
+      },
+    ]);
+  }
+
+  function eliminarTroza(id: string) {
+    if (trozas.length > 1) {
+      setTrozas(trozas.filter((t) => t.id !== id));
+    }
+  }
+
+  async function finalizarEntrada() {
+    const volumenFinal = trozas.reduce((sum, t) => sum + t.volumen_total, 0);
+    const aserradero = turnoAserraderoMap[turno];
+    const folio = `${new Date(fecha).toLocaleDateString('es-ES').replace(/\//g, '/')}-${new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+
+    const { data: entrada, error: entradaError } = await supabase
+      .from('entradas_troceria')
+      .insert({
+        folio,
+        fecha: new Date(fecha).toISOString(),
+        turno,
+        aserradero,
+        volumen_final: volumenFinal,
+        total_trozas: trozas.length,
+      })
+      .select()
+      .single();
+
+    if (entradaError || !entrada) {
+      alert('Error al crear la entrada');
+      return;
+    }
+
+    const trozasData = trozas.map((t) => ({
+      entrada_id: entrada.id,
+      origen,
+      diametro_1: t.diametro_1,
+      diametro_2: t.diametro_2,
+      largo: t.largo,
+      clase,
+      volumen_m3: t.volumen_m3,
+      descuento_porcentaje: t.descuento_porcentaje,
+      volumen_total: t.volumen_total,
+    }));
+
+    const { error: trozasError } = await supabase.from('trozas').insert(trozasData);
+
+    if (trozasError) {
+      alert('Error al guardar las trozas');
+      return;
+    }
+
+    router.push('/troceria');
+  }
+
+  function descartarEntrada() {
+    if (confirm('¿Está seguro de descartar esta entrada?')) {
+      router.push('/troceria');
+    }
+  }
+
+  const volumenTotal = trozas.reduce((sum, t) => sum + t.volumen_total, 0);
+
+  return (
+    <>
+      <Header
+        title="Entrada de trocería"
+        subtitle="Captura de dimensiones, clasificación y cálculo automático de volumen por troza"
+      />
+
+      <button
+        onClick={() => router.push('/troceria')}
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm font-medium">Regresar a historial de trocería</span>
+      </button>
+
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        <div className="col-span-2">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">DATOS DE ENTRADA</h2>
+            <div className="grid grid-cols-5 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                <input
+                  type="datetime-local"
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Turno</label>
+                <select
+                  value={turno}
+                  onChange={(e) => setTurno(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                  <option value="Nocturno">Nocturno</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Origen</label>
+                <select
+                  value={origen}
+                  onChange={(e) => setOrigen(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Clase</label>
+                <select
+                  value={clase}
+                  onChange={(e) => setClase(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={finalizarEntrada}
+              className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+            >
+              <Save className="w-5 h-5" />
+              Finalizar entrada
+            </button>
+            <button
+              onClick={descartarEntrada}
+              className="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Descartar entrada
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">TROZAS</h2>
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Diámetro 1
+                    </th>
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Diámetro 2
+                    </th>
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Largo
+                    </th>
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Volumen m³
+                    </th>
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Descuento %
+                    </th>
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
+                      Volumen total
+                    </th>
+                    <th className="pb-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trozas.map((troza) => (
+                    <tr key={troza.id} className="border-b border-gray-100">
+                      <td className="py-3 px-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={troza.diametro_1}
+                          onChange={(e) =>
+                            handleTrozaChange(troza.id, 'diametro_1', parseFloat(e.target.value) || 0)
+                          }
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-3 px-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={troza.diametro_2}
+                          onChange={(e) =>
+                            handleTrozaChange(troza.id, 'diametro_2', parseFloat(e.target.value) || 0)
+                          }
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-3 px-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={troza.largo}
+                          onChange={(e) =>
+                            handleTrozaChange(troza.id, 'largo', parseFloat(e.target.value) || 0)
+                          }
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-600">
+                        {troza.volumen_m3.toFixed(3)} m³
+                      </td>
+                      <td className="py-3 px-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={troza.descuento_porcentaje}
+                          onChange={(e) =>
+                            handleTrozaChange(
+                              troza.id,
+                              'descuento_porcentaje',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-900 font-medium">
+                        {troza.volumen_total.toFixed(3)} m³
+                      </td>
+                      <td className="py-3 px-2">
+                        <button
+                          onClick={() => eliminarTroza(troza.id)}
+                          className="text-red-500 hover:text-red-700"
+                          disabled={trozas.length === 1}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              onClick={agregarTroza}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              Agregar troza
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase">NUEVO LOTE</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {new Date(fecha).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}{' '}
+                  -{' '}
+                  {new Date(fecha).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">ASERRADERO</p>
+                <p className="text-2xl font-bold text-gray-900">{turnoAserraderoMap[turno]}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">TIPO</p>
+                <p className="text-2xl font-bold text-gray-900">{claseTypeMap[clase]}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Layers className="w-6 h-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">VOLUMEN FINAL</p>
+                <p className="text-2xl font-bold text-blue-500">{volumenTotal.toFixed(2)} m³</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+                <Layers className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">TROZAS</p>
+                <p className="text-2xl font-bold text-orange-600">{trozas.length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
