@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/localDb';
 
 export default function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   const [userEmail, setUserEmail] = useState('');
@@ -11,7 +11,7 @@ export default function Header({ title, subtitle }: { title: string; subtitle?: 
   }, []);
 
   async function getUserEmail() {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await db.auth.getSession();
     if (data.session?.user?.email) {
       setUserEmail(data.session.user.email);
     }

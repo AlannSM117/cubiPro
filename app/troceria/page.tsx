@@ -3,30 +3,27 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { supabase } from '@/lib/supabase';
+import { ApiClient } from '@/lib/apiClient';
 import { Plus, FileText, Layers } from 'lucide-react';
-import type { EntradaTroceria } from '@/lib/supabase';
 
 export default function TroceriaPage() {
   const router = useRouter();
-  const [entradas, setEntradas] = useState<EntradaTroceria[]>([]);
-  const [selectedEntrada, setSelectedEntrada] = useState<EntradaTroceria | null>(null);
+  const [entradas, setEntradas] = useState<any[]>([]);
+  const [selectedEntrada, setSelectedEntrada] = useState<any | null>(null);
 
   useEffect(() => {
     loadEntradas();
   }, []);
 
   async function loadEntradas() {
-    const { data } = await supabase
-      .from('entradas_troceria')
-      .select('*')
-      .order('fecha', { ascending: false });
-
-    if (data) {
-      setEntradas(data);
-      if (data.length > 0) {
+    try {
+      const data = await ApiClient.getTrocerias();
+      setEntradas(data || []);
+      if (data?.length > 0) {
         setSelectedEntrada(data[0]);
       }
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -57,7 +54,7 @@ export default function TroceriaPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
-                    Folio
+                    Folio (Fecha)
                   </th>
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
                     Turno
@@ -65,13 +62,15 @@ export default function TroceriaPage() {
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
                     Aserradero
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
+                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 text-center">
                     Trozas
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {entradas.map((entrada) => (
+                {entradas.map((entrada) => {
+                  const tzs = entrada.totalTrozas ?? entrada.total_trozas ?? entrada.trozas?.length ?? 0;
+                  return (
                   <tr
                     key={entrada.id}
                     onClick={() => setSelectedEntrada(entrada)}
@@ -92,12 +91,13 @@ export default function TroceriaPage() {
                       })}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{entrada.turno}</td>
-                    <td className="py-4 text-sm text-gray-600 text-center">{entrada.aserradero}</td>
+                    <td className="py-4 text-sm text-gray-600">{entrada.aserradero || '#1'}</td>
                     <td className="py-4 text-sm text-gray-600 text-center">
-                      {entrada.total_trozas || 0}
+                      {tzs}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {entradas.length === 0 && (
                   <tr>
                     <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
@@ -148,7 +148,7 @@ export default function TroceriaPage() {
                       VOLUMEN FINAL
                     </p>
                     <p className="text-2xl font-bold text-blue-500">
-                      {selectedEntrada.volumen_final?.toFixed(2)} m³
+                      {parseFloat(selectedEntrada.volumenTotal ?? selectedEntrada.volumen_total ?? selectedEntrada.volumenFinal ?? selectedEntrada.volumen_final ?? selectedEntrada.volumen ?? 0).toFixed(2)} m³
                     </p>
                   </div>
                 </div>
@@ -160,9 +160,9 @@ export default function TroceriaPage() {
                     <Layers className="w-6 h-6 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 uppercase mb-1">TROZAS</p>
+                    <p className="text-xs font-semibold text-gray-600 uppercase mb-1">TROZAS (CANTIDAD)</p>
                     <p className="text-2xl font-bold text-orange-600">
-                      {selectedEntrada.total_trozas || 0}
+                      {selectedEntrada.totalTrozas ?? selectedEntrada.total_trozas ?? selectedEntrada.trozas?.length ?? 0}
                     </p>
                   </div>
                 </div>

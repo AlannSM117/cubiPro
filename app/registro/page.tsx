@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/localDb';
 import { LogIn, Mail, Lock, CircleAlert as AlertCircle, User, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,7 +35,7 @@ export default function RegistroPage() {
     }
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await db.auth.signUp({
         email,
         password,
         options: {
@@ -193,7 +193,7 @@ export default function RegistroPage() {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-400">
-          <p>Sistema seguro con autenticación Supabase</p>
+          <p>Sistema seguro local</p>
         </div>
       </div>
     </div>

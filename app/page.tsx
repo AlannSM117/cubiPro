@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
-import { supabase } from '@/lib/supabase';
+import { ApiClient } from '@/lib/apiClient';
+import { db } from '@/lib/localDb';
 import { Truck, Package, Layers, TrendingUp, Calendar } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -11,6 +12,8 @@ export default function DashboardPage() {
     volumenProducidoHoy: 0,
     totalTrozas: 0,
     rendimientoGeneral: 0,
+    trozasIngresadasHoy: 0,
+    piezasProducidasHoy: 0,
   });
   const [entradasRecientes, setEntradasRecientes] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -20,43 +23,52 @@ export default function DashboardPage() {
   }, []);
 
   async function loadDashboardData() {
-    const today = new Date().toISOString().split('T')[0];
+    try {
+      const recent = await ApiClient.getDashboardRecentEntries().catch(() => []);
+      const chart = await ApiClient.getDashboardChart().catch(() => []);
+      
+      const trocerias = await ApiClient.getTrocerias().catch(() => []);
+      const producciones = await ApiClient.getProducciones().catch(() => []);
+      
+      const hoy = new Date().toISOString().split('T')[0];
+      
+      // Filtrar por los creados hoy en trocería del API
+      const troceriasHoy = trocerias.filter((t: any) => t.fecha && t.fecha.startsWith(hoy));
+      
+      // Obtener producción de la localDb porque el form todavia lo guarda ahi
+      const { data: produccionesDb } = await db
+        .from('entradas_produccion')
+        .select('*');
+      const produccionesHoy = (produccionesDb || []).filter((p: any) => p.fecha && p.fecha.startsWith(hoy));
+      
+      const volIngresadoHoy = troceriasHoy.reduce((acc: number, t: any) => 
+        acc + parseFloat(t.volumenTotal ?? t.volumenFinal ?? t.volumen_final ?? 0), 0);
+        
+      const volProducidoHoy = produccionesHoy.reduce((acc: number, p: any) => 
+        acc + parseFloat(p.volumen_producido || 0), 0);
+        
+      const numTrozasHoy = troceriasHoy.reduce((acc: number, t: any) => 
+        acc + parseInt(t.totalTrozas ?? t.total_trozas ?? t.trozas?.length ?? 0, 10), 0);
 
-    const { data: produccionHoy } = await supabase
-      .from('produccion_diaria')
-      .select('*')
-      .eq('fecha', today)
-      .maybeSingle();
+      const numPiezasHoy = produccionesHoy.reduce((acc: number, p: any) => 
+        acc + parseInt(p.total_piezas || 0, 10), 0);
 
-    const { data: entradas } = await supabase
-      .from('entradas_troceria')
-      .select('*')
-      .order('fecha', { ascending: false })
-      .limit(4);
+      const rendimiento = volIngresadoHoy > 0 ? (volProducidoHoy / volIngresadoHoy) * 100 : 0;
 
-    const { data: todasEntradas } = await supabase
-      .from('entradas_troceria')
-      .select('total_trozas');
+      setStats({
+        volumenIngresadoHoy: volIngresadoHoy,
+        volumenProducidoHoy: volProducidoHoy,
+        totalTrozas: numTrozasHoy,
+        rendimientoGeneral: rendimiento,
+        piezasProducidasHoy: numPiezasHoy,
+        trozasIngresadasHoy: numTrozasHoy,
+      } as any);
 
-    const totalTrozasSum = todasEntradas?.reduce((sum, e) => sum + (e.total_trozas || 0), 0) || 0;
-
-    const { data: ultimas15Dias } = await supabase
-      .from('produccion_diaria')
-      .select('*')
-      .order('fecha', { ascending: true })
-      .limit(15);
-
-    setStats({
-      volumenIngresadoHoy: produccionHoy?.volumen_ingresado || 0,
-      volumenProducidoHoy: produccionHoy?.volumen_producido || 0,
-      totalTrozas: totalTrozasSum,
-      rendimientoGeneral: produccionHoy?.volumen_ingresado
-        ? ((produccionHoy?.volumen_producido / produccionHoy?.volumen_ingresado) * 100)
-        : 0,
-    });
-
-    setEntradasRecientes(entradas || []);
-    setChartData(ultimas15Dias || []);
+      setEntradasRecientes(recent || []);
+      setChartData(chart || []);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
@@ -216,10 +228,10 @@ export default function DashboardPage() {
                     })}
                   </td>
                   <td className="py-4 text-sm text-gray-600 text-center">
-                    {entrada.total_trozas || 0}
+                    {entrada.totalTrozas ?? entrada.total_trozas ?? entrada.trozas?.length ?? 0}
                   </td>
                   <td className="py-4 text-sm text-gray-600">
-                    {(entrada.volumen_final || 0).toFixed(3)}
+                    {parseFloat(entrada.volumenTotal ?? entrada.volumen_total ?? entrada.volumenFinal ?? entrada.volumen_final ?? entrada.volumen ?? 0).toFixed(2)}
                   </td>
                 </tr>
               ))}

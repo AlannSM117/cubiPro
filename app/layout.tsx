@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/localDb';
 import Sidebar from '@/components/Sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -23,24 +23,11 @@ export default function RootLayout({
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [pathname]);
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-      if (!session && !isAuthRoute) {
-        router.push('/login');
-      }
-    });
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, [isAuthRoute, router]);
-
-  async function checkAuth() {
-    const { data } = await supabase.auth.getSession();
-    const authenticated = !!data.session;
+  function checkAuth() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const authenticated = !!token;
     setIsAuthenticated(authenticated);
 
     if (!authenticated && !isAuthRoute) {

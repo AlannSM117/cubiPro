@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/localDb';
 import { Plus, Cloud } from 'lucide-react';
 
 interface EntradaProduccion {
@@ -28,7 +28,7 @@ export default function ProduccionPage() {
 
   async function loadEntradas() {
     setIsLoading(true);
-    const { data } = await supabase
+    const { data } = await db
       .from('entradas_produccion')
       .select('*')
       .order('fecha', { ascending: false });

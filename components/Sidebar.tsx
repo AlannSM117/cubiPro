@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, TreePine, Package, ShoppingCart, FileText, Settings, LogOut, CircleHelp as HelpCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useState } from 'react';
+import { LayoutDashboard, TreePine, Package, ShoppingCart, FileText, Settings, LogOut, CircleHelp as HelpCircle, Users } from 'lucide-react';
+import { ApiClient } from '@/lib/apiClient';
+import { useState, useEffect } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -19,9 +19,22 @@ export default function Sidebar() {
     { icon: FileText, label: 'Reportes', href: '/reportes' },
   ];
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const user = ApiClient.getUserFromToken();
+    if (user && (user.role === 'ADMIN' || user.role?.toUpperCase() === 'ADMIN')) {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  if (isAdmin) {
+    menuItems.push({ icon: Users, label: 'Usuarios', href: '/usuarios' });
+  }
+
   async function handleLogout() {
     setIsLoggingOut(true);
-    await supabase.auth.signOut();
+    ApiClient.logout();
     router.push('/login');
   }
 

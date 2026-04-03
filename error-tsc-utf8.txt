@@ -1,0 +1,8 @@
+﻿app/page.tsx(25,43): error TS2304: Cannot find name 'supabase'.
+app/page.tsx(31,38): error TS2304: Cannot find name 'supabase'.
+app/page.tsx(37,43): error TS2304: Cannot find name 'supabase'.
+app/page.tsx(43,43): error TS2304: Cannot find name 'supabase'.
+app/produccion/nueva/page.tsx(123,58): error TS2304: Cannot find name 'supabase'.
+app/produccion/page.tsx(31,28): error TS2304: Cannot find name 'supabase'.
+app/troceria/nueva/page.tsx(107,58): error TS2304: Cannot find name 'supabase'.
+app/troceria/page.tsx(20,28): error TS2304: Cannot find name 'supabase'.
