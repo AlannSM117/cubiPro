@@ -1,35 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/localDb';
+import { ApiClient } from '@/lib/apiClient';
 
 export default function Header({ title, subtitle }: { title: string; subtitle?: string }) {
-  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    getUserEmail();
+    const user = ApiClient.getUserFromToken();
+    if (user) {
+      // El JWT contiene sub (username), nombres, apellidos o email según el backend
+      const fullName = [
+        user.nombres ?? '',
+        user.apellidos ?? ''
+      ].filter(Boolean).join(' ').trim();
+      setUserName(fullName || user.sub || user.email || '');
+    }
   }, []);
 
-  async function getUserEmail() {
-    const { data } = await db.auth.getSession();
-    if (data.session?.user?.email) {
-      setUserEmail(data.session.user.email);
-    }
-  }
-
-  // Obtenemos iniciales
-  const initials = userEmail
-    .split('@')[0]
-    .split('.')
+  // Obtenemos iniciales del nombre completo
+  const initials = userName
+    .split(' ')
     .map((part) => part[0])
     .join('')
     .toUpperCase()
     .slice(0, 2) || 'U';
 
-  // Damos formato al nombre (ej: juan.perez -> Juan Perez)
-  const displayName = userEmail 
-    ? userEmail.split('@')[0].split('.').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-    : 'Admin';
+  const displayName = userName || 'Admin';
 
   return (
     <div className="flex justify-between items-start mb-8">

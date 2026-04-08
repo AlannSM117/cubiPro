@@ -3,17 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { db } from '@/lib/localDb';
+import { ApiClient } from '@/lib/apiClient';
 import { Plus, FileText, Layers } from 'lucide-react';
 
 interface EntradaProduccion {
-  id: string;
-  folio: string;
+  id: number;
   fecha: string;
   turno: string;
-  aserradero: number;
-  volumen_producido: number;
-  total_piezas: number;
+  aserradero: string;
+  volumenTotal: number;
+  totalPiezas: number;
 }
 
 export default function ProduccionPage() {
@@ -28,14 +27,15 @@ export default function ProduccionPage() {
 
   async function loadEntradas() {
     setIsLoading(true);
-    const { data } = await db
-      .from('entradas_produccion')
-      .select('*')
-      .order('fecha', { ascending: false });
-
-    setEntradas(data || []);
-    if (data && data.length > 0) {
-      setSelectedEntrada(data[0]);
+    try {
+      const data = await ApiClient.getProducciones();
+      setEntradas(data || []);
+      if (data && data.length > 0) {
+        setSelectedEntrada(data[0]);
+      }
+    } catch (e) {
+      console.error(e);
+      setEntradas([]);
     }
     setIsLoading(false);
   }
@@ -95,7 +95,7 @@ export default function ProduccionPage() {
                     </td>
                     <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25]">{entrada.turno}</td>
                     <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] text-center">{entrada.aserradero}</td>
-                    <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] text-center">{entrada.total_piezas || 0}</td>
+                    <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] text-center">{entrada.totalPiezas || 0}</td>
                   </tr>
                 ))}
                 {entradas.length === 0 && (
@@ -148,7 +148,7 @@ export default function ProduccionPage() {
               <div>
                 <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">VOLUMEN TOTAL</p>
                 <p className="font-lexend font-normal text-[25px] leading-none text-[#09934D]">
-                  {selectedEntrada ? selectedEntrada.volumen_producido.toFixed(2) : '0.00'} m³
+                  {selectedEntrada ? selectedEntrada.volumenTotal.toFixed(2) : '0.00'} m³
                 </p>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function ProduccionPage() {
               <div>
                 <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">PIEZAS (CANTIDAD)</p>
                 <p className="font-lexend font-normal text-[25px] leading-none text-[#C4670B]">
-                  {selectedEntrada ? String(selectedEntrada.total_piezas || 0).padStart(3, '0') : '000'}
+                  {selectedEntrada ? String(selectedEntrada.totalPiezas || 0).padStart(3, '0') : '000'}
                 </p>
               </div>
             </div>

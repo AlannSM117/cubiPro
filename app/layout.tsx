@@ -5,6 +5,7 @@ import { Lexend, Roboto } from 'next/font/google'; // Importamos las nuevas fuen
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
+import { ApiClient } from '@/lib/apiClient';
 
 // Configuramos Lexend (Fuente principal para títulos y menú)
 const lexend = Lexend({ weight: ['300', '400', '500', '700'], subsets: ['latin'], variable: '--font-lexend' });
@@ -32,6 +33,9 @@ export default function RootLayout({
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     const authenticated = !!token;
     setIsAuthenticated(authenticated);
+
+    // Limpiar siempre los datos residuales del mock antiguo
+    ApiClient.clearLegacyLocalStorage();
 
     if (!authenticated && !isAuthRoute) {
       router.push('/login');

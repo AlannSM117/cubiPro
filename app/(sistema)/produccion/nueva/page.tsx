@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { db } from '@/lib/localDb';
+import { ApiClient } from '@/lib/apiClient';
 import { ArrowLeft, Plus, Save, Trash2, FileText, Cloud } from 'lucide-react';
 
 type PiezaForm = {
@@ -44,7 +44,7 @@ const turnoAserraderoMap: Record<string, number> = {
 
 export default function NuevaProduccionPage() {
   const router = useRouter();
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 16));
+  const [fecha, setFecha] = useState(new Date());
   const [turno, setTurno] = useState('Matutino');
   const [piezas, setPiezas] = useState<PiezaForm[]>([
     {
@@ -121,52 +121,32 @@ export default function NuevaProduccionPage() {
   }
 
   async function finalizarEntrada() {
-    const volumenTotal = piezas.reduce((sum, p) => sum + p.volumen_m3, 0);
-    const piesTablaTotal = piezas.reduce((sum, p) => sum + p.pies_tabla, 0);
-    const piezasTotalesUnidades = piezas.reduce((sum, p) => sum + p.verde + p.estufa, 0);
-    const aserradero = turnoAserraderoMap[turno];
-    const folio = `${new Date(fecha).toLocaleDateString('es-ES').replace(/\//g, '/')}-${new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
-
-    // OMITIMOS LLAMADA A BD PORQUE TODAVIA ESTA CON DB.FROM AQUI (SEGUN ARCHIVO), LUEGO LO PUEDO ADAPTAR AL APICLIENT SI EL USUARIO QUIERE
-    const { data: entrada, error: entradaError } = await db
-      .from('entradas_produccion')
-      .insert({
-        folio,
-        fecha: new Date(fecha).toISOString(),
+    try {
+      // 1. Create Entrada
+      const entrada = await ApiClient.createEntradaProduccion({
+        fecha: fecha.toISOString(),
         turno,
-        aserradero,
-        volumen_producido: volumenTotal,
-        total_piezas: piezasTotalesUnidades,
-        pies_tabla: piesTablaTotal,
-      })
-      .select()
-      .single();
+      });
 
-    if (entradaError || !entrada) {
-      alert('Error al crear la entrada');
-      return;
+      // 2. Add each Pieza
+      for (const p of piezas) {
+        await ApiClient.addPieza(entrada.id, {
+          grueso: parseFraction(p.grueso),
+          clase: parseInt(p.clase, 10),
+          ancho: p.ancho,
+          largo: p.largo,
+          verde: p.verde,
+          estufa: p.estufa,
+        });
+      }
+
+      // 3. Finalize Entrada
+      await ApiClient.finalizarEntradaProduccion(entrada.id);
+
+      router.push('/produccion');
+    } catch (e: any) {
+      alert('Error en el proceso: ' + e.message);
     }
-
-    const piezasData = piezas.map((p) => ({
-      entrada_id: entrada.id,
-      grueso: parseFraction(p.grueso),
-      clase: p.clase,
-      ancho: p.ancho,
-      largo: p.largo,
-      verde: p.verde,
-      estufa: p.estufa,
-      pies_tabla: p.pies_tabla,
-      volumen_m3: p.volumen_m3,
-    }));
-
-    const { error: piezasError } = await db.from('piezas_produccion').insert(piezasData);
-
-    if (piezasError) {
-      alert('Error al guardar las piezas');
-      return;
-    }
-
-    router.push('/produccion');
   }
 
   function descartarEntrada() {
@@ -202,9 +182,16 @@ export default function NuevaProduccionPage() {
               <div>
                 <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Fecha</label>
                 <input
-                  type="datetime-local"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
+                  type="date"
+                  value={`${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      const newDate = new Date(fecha);
+                      newDate.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+                      setFecha(newDate);
+                    }
+                  }}
                   className="w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -381,13 +368,13 @@ export default function NuevaProduccionPage() {
               <div className="flex flex-col justify-center">
                 <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">NUEVA ENTRADA</p>
                 <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
-                  {new Date(fecha).toLocaleDateString('es-ES', {
+                  {fecha.toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
                   })}{' '}
                   -{' '}
-                  {new Date(fecha).toLocaleTimeString('es-ES', {
+                  {fecha.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}

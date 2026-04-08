@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { ApiClient } from '@/lib/apiClient';
 import Header from '@/components/layout/Header';
-import { db } from '@/lib/localDb';
 import { Truck, Factory, Layers, TrendingUp, Calendar } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -25,46 +24,42 @@ export default function DashboardPage() {
 
   async function loadDashboardData() {
     try {
-      const recent = await ApiClient.getDashboardRecentEntries().catch(() => []);
-      const chart = await ApiClient.getDashboardChart().catch(() => []);
-      
-      const trocerias = await ApiClient.getTrocerias().catch(() => []);
-      const producciones = await ApiClient.getProducciones().catch(() => []);
-      
-      const hoy = new Date().toISOString().split('T')[0];
-      
-      const troceriasHoy = trocerias.filter((t: any) => t.fecha && t.fecha.startsWith(hoy));
-      
-      const { data: produccionesDb } = await db
-        .from('entradas_produccion')
-        .select('*');
-      const produccionesHoy = (produccionesDb || []).filter((p: any) => p.fecha && p.fecha.startsWith(hoy));
-      
-      const volIngresadoHoy = troceriasHoy.reduce((acc: number, t: any) => 
-        acc + parseFloat(t.volumenTotal ?? t.volumenFinal ?? t.volumen_final ?? 0), 0);
-        
-      const volProducidoHoy = produccionesHoy.reduce((acc: number, p: any) => 
-        acc + parseFloat(p.volumen_producido || 0), 0);
-        
-      const numTrozasHoy = troceriasHoy.reduce((acc: number, t: any) => 
-        acc + parseInt(t.totalTrozas ?? t.total_trozas ?? t.trozas?.length ?? 0, 10), 0);
+      // Cargar métricas, entradas recientes y gráfico en paralelo
+      const [metrics, recent, chart] = await Promise.allSettled([
+        ApiClient.getDashboardMetrics(),
+        ApiClient.getDashboardRecentEntries(),
+        ApiClient.getDashboardChart(),
+      ]);
 
-      const numPiezasHoy = produccionesHoy.reduce((acc: number, p: any) => 
-        acc + parseInt(p.total_piezas || 0, 10), 0);
+      if (metrics.status === 'fulfilled' && metrics.value) {
+        const m = metrics.value;
+        setStats({
+          volumenIngresadoHoy: parseFloat(m.volumenIngresadoHoy ?? 0),
+          volumenProducidoHoy: parseFloat(m.volumenProducidoHoy ?? 0),
+          // El backend devuelve totalTrozasHoy
+          totalTrozas: parseInt(m.totalTrozasHoy ?? m.totalTrozas ?? 0, 10),
+          rendimientoGeneral: parseFloat(m.rendimientoGeneral ?? 0),
+          trozasIngresadasHoy: parseInt(m.totalTrozasHoy ?? 0, 10),
+          piezasProducidasHoy: parseInt(m.piezasProducidasHoy ?? 0, 10),
+        });
+      }
 
-      const rendimiento = volIngresadoHoy > 0 ? (volProducidoHoy / volIngresadoHoy) * 100 : 0;
+      setEntradasRecientes(recent.status === 'fulfilled' ? (recent.value || []) : []);
 
-      setStats({
-        volumenIngresadoHoy: volIngresadoHoy,
-        volumenProducidoHoy: volProducidoHoy,
-        totalTrozas: numTrozasHoy,
-        rendimientoGeneral: rendimiento,
-        piezasProducidasHoy: numPiezasHoy,
-        trozasIngresadasHoy: numTrozasHoy,
-      } as any);
-
-      setEntradasRecientes(recent || []);
-      setChartData(chart || []);
+      // El backend devuelve { date, ingreso, produccion } — mapeamos a { fecha, rendimiento }
+      if (chart.status === 'fulfilled' && Array.isArray(chart.value)) {
+        const mapped = chart.value.map((item: any) => ({
+          fecha: item.fecha ?? item.date ?? '',
+          ingreso: item.ingreso ?? 0,
+          produccion: item.produccion ?? 0,
+          rendimiento: item.ingreso > 0
+            ? parseFloat(((item.produccion / item.ingreso) * 100).toFixed(2))
+            : 0,
+        }));
+        setChartData(mapped);
+      } else {
+        setChartData([]);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -147,18 +142,21 @@ export default function DashboardPage() {
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="colorRend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#BD37E6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#BD37E6" stopOpacity={0}/>
+                    <linearGradient id="colorIngreso" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3786E6" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#3786E6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorProduccion" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#09934D" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#09934D" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis 
-                    dataKey="fecha" 
+                  <XAxis
+                    dataKey="fecha"
                     tickFormatter={(val) => {
                       if (!val) return '';
                       try {
                         const d = new Date(val);
-                        // Añadimos horas para corregir diferencias por zona horaria de UTC
                         const correctedDate = new Date(d.getTime() + Math.abs(d.getTimezoneOffset() * 60000));
                         return correctedDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
                       } catch { return val; }
@@ -169,19 +167,20 @@ export default function DashboardPage() {
                     axisLine={false}
                     dy={10}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#9ca3af"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(val) => `${val}%`}
+                    tickFormatter={(val) => `${val} m³`}
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                     formatter={(value: any, name: string) => {
-                      if (name === 'rendimiento') return [`${parseFloat(value).toFixed(1)}%`, 'Rendimiento'];
-                      return [`${parseFloat(value).toFixed(2)} m³`, name === 'produccion' ? 'Producción' : 'Ingreso'];
+                      if (name === 'ingreso') return [`${parseFloat(value).toFixed(3)} m³`, 'Ingreso'];
+                      if (name === 'produccion') return [`${parseFloat(value).toFixed(3)} m³`, 'Producción'];
+                      return [value, name];
                     }}
                     labelFormatter={(label) => {
                       try {
@@ -191,14 +190,28 @@ export default function DashboardPage() {
                       } catch { return label; }
                     }}
                   />
+                  <Legend
+                    formatter={(value) => value === 'ingreso' ? 'Ingreso (m³)' : 'Producción (m³)'}
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
+                  />
                   <Area
                     type="monotone"
-                    dataKey="rendimiento"
-                    stroke="#BD37E6"
-                    strokeWidth={3}
+                    dataKey="ingreso"
+                    stroke="#3786E6"
+                    strokeWidth={2}
                     fillOpacity={1}
-                    fill="url(#colorRend)"
-                    activeDot={{ r: 6, strokeWidth: 0, fill: '#BD37E6' }}
+                    fill="url(#colorIngreso)"
+                    activeDot={{ r: 5, strokeWidth: 0, fill: '#3786E6' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="produccion"
+                    stroke="#09934D"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorProduccion)"
+                    activeDot={{ r: 5, strokeWidth: 0, fill: '#09934D' }}
                   />
                 </AreaChart>
               </ResponsiveContainer>

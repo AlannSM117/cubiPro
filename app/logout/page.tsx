@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/localDb';
+import { ApiClient } from '@/lib/apiClient';
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function LogoutPage() {
   }, []);
 
   async function handleLogout() {
-    await db.auth.signOut();
+    ApiClient.logout();
     router.push('/login');
   }
 

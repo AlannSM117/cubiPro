@@ -23,6 +23,8 @@ export class ApiClient {
     const json = await res.json();
     if (typeof window !== 'undefined' && json.access_token) {
       localStorage.setItem('access_token', json.access_token);
+      // Limpiar datos residuales del almacenamiento local (mock antiguo)
+      this.clearLegacyLocalStorage();
     }
     return json;
   }
@@ -30,7 +32,21 @@ export class ApiClient {
   static logout() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
+      this.clearLegacyLocalStorage();
     }
+  }
+
+  /** Elimina todos los datos residuales del mock local (localDb antiguo) */
+  static clearLegacyLocalStorage() {
+    if (typeof window === 'undefined') return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('db_') || key === 'auth_session')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   }
 
   static getUserFromToken(): any | null {
@@ -117,6 +133,43 @@ export class ApiClient {
       return [];
     }
     return res.json().catch(() => []);
+  }
+
+  static async createEntradaProduccion(data: { fecha: string, turno: string }) {
+    const res = await fetch(`${API_URL}/produccion`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const resp = await res.json().catch(() => null);
+      const msg = resp?.message ? (Array.isArray(resp.message) ? resp.message.join(', ') : resp.message) : 'Error al crear entrada de producción';
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  static async addPieza(entradaId: string, data: { grueso: number, clase: number, ancho: number, largo: number, verde: number, estufa: number }) {
+    const res = await fetch(`${API_URL}/produccion/${entradaId}/piezas`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const resp = await res.json().catch(() => null);
+      const msg = resp?.message ? (Array.isArray(resp.message) ? resp.message.join(', ') : resp.message) : 'Error al agregar pieza';
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  static async finalizarEntradaProduccion(entradaId: string) {
+    const res = await fetch(`${API_URL}/produccion/${entradaId}/finalizar`, {
+      method: 'PATCH',
+      headers: this.getHeaders()
+    });
+    if (!res.ok) throw new Error('Error al finalizar entrada de producción');
+    return res.json();
   }
 
   // --- USUARIOS --- //
