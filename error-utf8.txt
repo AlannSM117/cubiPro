@@ -1,4 +1,0 @@
-﻿app/layout.tsx(29,69): error TS7006: Parameter 'event' implicitly has an 'any' type.
-app/layout.tsx(29,76): error TS7006: Parameter 'session' implicitly has an 'any' type.
-app/page.tsx(41,51): error TS7006: Parameter 'sum' implicitly has an 'any' type.
-app/page.tsx(41,56): error TS7006: Parameter 'e' implicitly has an 'any' type.

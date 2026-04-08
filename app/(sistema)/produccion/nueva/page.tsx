@@ -1,18 +1,10 @@
 'use client';
 
-
-
 import { useState } from 'react';
-
 import { useRouter } from 'next/navigation';
-
-import Header from '@/components/Header';
-
-import { db } from '@/lib/localDb';
-
+import Header from '@/components/layout/Header';
+import { ApiClient } from '@/lib/apiClient';
 import { ArrowLeft, Plus, Save, Trash2, FileText, Cloud } from 'lucide-react';
-
-
 
 type PiezaForm = {
   id: string;
@@ -52,7 +44,7 @@ const turnoAserraderoMap: Record<string, number> = {
 
 export default function NuevaProduccionPage() {
   const router = useRouter();
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 16));
+  const [fecha, setFecha] = useState(new Date());
   const [turno, setTurno] = useState('Matutino');
   const [piezas, setPiezas] = useState<PiezaForm[]>([
     {
@@ -129,52 +121,32 @@ export default function NuevaProduccionPage() {
   }
 
   async function finalizarEntrada() {
-    const volumenTotal = piezas.reduce((sum, p) => sum + p.volumen_m3, 0);
-    const piesTablaTotal = piezas.reduce((sum, p) => sum + p.pies_tabla, 0);
-    const piezasTotalesUnidades = piezas.reduce((sum, p) => sum + p.verde + p.estufa, 0);
-    const aserradero = turnoAserraderoMap[turno];
-    const folio = `${new Date(fecha).toLocaleDateString('es-ES').replace(/\//g, '/')}-${new Date(fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
-
-    // OMITIMOS LLAMADA A BD PORQUE TODAVIA ESTA CON DB.FROM AQUI (SEGUN ARCHIVO), LUEGO LO PUEDO ADAPTAR AL APICLIENT SI EL USUARIO QUIERE
-    const { data: entrada, error: entradaError } = await db
-      .from('entradas_produccion')
-      .insert({
-        folio,
-        fecha: new Date(fecha).toISOString(),
+    try {
+      // 1. Create Entrada
+      const entrada = await ApiClient.createEntradaProduccion({
+        fecha: fecha.toISOString(),
         turno,
-        aserradero,
-        volumen_producido: volumenTotal,
-        total_piezas: piezasTotalesUnidades,
-        pies_tabla: piesTablaTotal,
-      })
-      .select()
-      .single();
+      });
 
-    if (entradaError || !entrada) {
-      alert('Error al crear la entrada');
-      return;
+      // 2. Add each Pieza
+      for (const p of piezas) {
+        await ApiClient.addPieza(entrada.id, {
+          grueso: parseFraction(p.grueso),
+          clase: parseInt(p.clase, 10),
+          ancho: p.ancho,
+          largo: p.largo,
+          verde: p.verde,
+          estufa: p.estufa,
+        });
+      }
+
+      // 3. Finalize Entrada
+      await ApiClient.finalizarEntradaProduccion(entrada.id);
+
+      router.push('/produccion');
+    } catch (e: any) {
+      alert('Error en el proceso: ' + e.message);
     }
-
-    const piezasData = piezas.map((p) => ({
-      entrada_id: entrada.id,
-      grueso: parseFraction(p.grueso),
-      clase: p.clase,
-      ancho: p.ancho,
-      largo: p.largo,
-      verde: p.verde,
-      estufa: p.estufa,
-      pies_tabla: p.pies_tabla,
-      volumen_m3: p.volumen_m3,
-    }));
-
-    const { error: piezasError } = await db.from('piezas_produccion').insert(piezasData);
-
-    if (piezasError) {
-      alert('Error al guardar las piezas');
-      return;
-    }
-
-    router.push('/produccion');
   }
 
   function descartarEntrada() {
@@ -196,32 +168,39 @@ export default function NuevaProduccionPage() {
 
       <button
         onClick={() => router.push('/produccion')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+        className="flex items-center gap-2 text-[#839590] hover:text-[#0A2C25] mb-6 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">Regresar a historial de madera en tabla</span>
+        <span className="text-sm font-lexend font-normal">Regresar a historial de madera en tabla</span>
       </button>
 
       <div className="grid grid-cols-3 gap-6 mb-6">
         <div className="col-span-2">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">DATOS DE ENTRADA</h2>
+            <h2 className="font-lexend font-medium text-[16px] text-[#0A2C25] mb-6 uppercase tracking-wide">DATOS DE ENTRADA</h2>
             <div className="grid grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Fecha</label>
                 <input
-                  type="datetime-local"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  type="date"
+                  value={`${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      const newDate = new Date(fecha);
+                      newDate.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+                      setFecha(newDate);
+                    }
+                  }}
+                  className="w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Turno</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Turno</label>
                 <select
                   value={turno}
                   onChange={(e) => setTurno(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Matutino">Matutino</option>
                   <option value="Vespertino">Vespertino</option>
@@ -229,9 +208,9 @@ export default function NuevaProduccionPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Aserradero</label>
-                <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 flex items-center">
-                  <span className="text-sm font-medium text-gray-900">{turnoAserraderoMap[turno]}</span>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Aserradero</label>
+                <div className="w-full px-2 font-lexend font-normal py-3 text-[#0A2C25] border border-gray-300 rounded-lg items-center">
+                  <span className="font-lexend font-medium text-left text-[13px] text-[#839590]">{turnoAserraderoMap[turno]}</span>
                 </div>
               </div>
             </div>
@@ -240,347 +219,196 @@ export default function NuevaProduccionPage() {
           <div className="flex gap-4 mb-6">
             <button
               onClick={finalizarEntrada}
-              className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-[#08C565] text-white font-lexend rounded-lg hover:bg-[#09934D] transition-colors font-normal"
             >
               <Save className="w-5 h-5" />
               Finalizar entrada
             </button>
             <button
               onClick={descartarEntrada}
-              className="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white font-lexend rounded-lg hover:bg-red-700 transition-colors font-normal"
             >
               Descartar entrada
             </button>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">PIEZAS</h2>
+            <h2 className="font-lexend font-medium text-[16px] text-[#0A2C25] mb-6 uppercase tracking-wide">PIEZAS</h2>
             <div className="overflow-x-auto mb-4">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Grueso
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Clase
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Ancho
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Largo
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Verde
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Estufa
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Pies Tabla
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Volumen m³
-                    </th>
+                  <tr className="border-b border-[#c1cac7]">
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Grueso</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Clase</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Ancho</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Largo</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Verde</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Estufa</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Pies Tabla</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Volumen m³</th>
                     <th className="pb-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {piezas.map((pieza) => (
-                    <tr key={pieza.id} className="border-b border-gray-100">
-                      <td className="py-3 px-2">
-
+                    <tr key={pieza.id} className="border-b border-[#e0e4e3]">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
-
                           type="text"
-
                           value={pieza.grueso}
-
                           onChange={(e) =>
-
                             handlePiezaChange(pieza.id, 'grueso', e.target.value)
-
                           }
-
                           placeholder="Ej. 1 1/2"
-
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
-
                         />
 
                       </td>
 
-                      <td className="py-3 px-2">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <select
-
                           value={pieza.clase}
-
                           onChange={(e) => handlePiezaChange(pieza.id, 'clase', e.target.value)}
-
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-
                         >
-
                           <option value="2">2</option>
-
                           <option value="3">3</option>
-
                           <option value="4">4</option>
-
                           <option value="5">5</option>
-
                         </select>
-
                       </td>
-
-                      <td className="py-3 px-2">
-
+                      
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
-
                           type="number"
-
                           step="0.01"
-
                           value={pieza.ancho}
-
                           onChange={(e) =>
-
                             handlePiezaChange(pieza.id, 'ancho', parseFloat(e.target.value) || 0)
-
                           }
-
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
-
                         />
-
                       </td>
 
-                      <td className="py-3 px-2">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
-
                           type="number"
-
                           step="0.01"
-
                           value={pieza.largo}
-
                           onChange={(e) =>
-
                             handlePiezaChange(pieza.id, 'largo', parseFloat(e.target.value) || 0)
-
                           }
-
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
-
                         />
-
                       </td>
 
-                      <td className="py-3 px-2">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
-
                           type="number"
-
                           value={pieza.verde}
-
                           onChange={(e) =>
-
                             handlePiezaChange(pieza.id, 'verde', parseInt(e.target.value) || 0)
-
                           }
-
                           className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
-
                         />
-
                       </td>
 
-                      <td className="py-3 px-2">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
-
                           type="number"
-
                           value={pieza.estufa}
-
                           onChange={(e) =>
-
                             handlePiezaChange(pieza.id, 'estufa', parseInt(e.target.value) || 0)
-
                           }
-
                           className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
-
                         />
-
                       </td>
 
-                      <td className="py-3 px-2 text-sm text-gray-600">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#839590] px-2 text-sm">
                         {pieza.pies_tabla.toFixed(2)}
-
                       </td>
 
-                      <td className="py-3 px-2 text-sm text-gray-900 font-medium">
-
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#839590] px-2 text-sm">
                         {pieza.volumen_m3.toFixed(4)} m³
-
                       </td>
 
                       <td className="py-3 px-2">
-
                         <button
-
                           onClick={() => eliminarPieza(pieza.id)}
-
                           className="text-red-500 hover:text-red-700"
-
                           disabled={piezas.length === 1}
-
                         >
-
                           <Trash2 className="w-4 h-4" />
-
                         </button>
-
                       </td>
-
                     </tr>
-
                   ))}
-
                 </tbody>
-
               </table>
-
             </div>
 
             <button
-
               onClick={agregarPieza}
-
-              className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-
+              className="flex items-center gap-2 px-6 py-3 bg-[#3786E6] text-white font-lexend rounded-lg hover:bg-[#0956B6] transition-colors font-normal"
             >
-
               <Plus className="w-5 h-5" />
-
               Agregar pieza
-
             </button>
-
           </div>
-
         </div>
 
-
-
+        {/* 4 Tarjetas Derecha */}
         <div className="space-y-6">
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-
-            <div className="flex items-center gap-3 mb-4">
-
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-
-                <FileText className="w-5 h-5 text-gray-600" />
-
+          {/* Card 1 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-0.5">
+              <div className="w-[64px] h-[64px] bg-[#f5f5f5] rounded-2xl flex items-center justify-center flex-shrink-0">
+                <FileText className="w-8 h-8 text-[#4b5563]" />
               </div>
-
-              <div>
-
-                <p className="text-xs font-semibold text-gray-600 uppercase">NUEVA ENTRADA</p>
-
-                <p className="text-lg font-bold text-gray-900">
-
-                  {new Date(fecha).toLocaleDateString('es-ES', {
-
+              <div className="flex flex-col justify-center">
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">NUEVA ENTRADA</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
+                  {fecha.toLocaleDateString('es-ES', {
                     day: '2-digit',
-
                     month: '2-digit',
-
                     year: 'numeric',
-
                   })}{' '}
-
                   -{' '}
-
-                  {new Date(fecha).toLocaleTimeString('es-ES', {
-
+                  {fecha.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
-
                     minute: '2-digit',
-
                   })}
-
                 </p>
-
               </div>
-
             </div>
-
           </div>
-
-
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-
+          {/* Card 2 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-start gap-4">
-
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-
-                <Cloud className="w-6 h-6 text-green-600" />
-
+              <div className="w-[64px] h-[64px] bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Cloud className="w-8 h-8 text-[#09934D]" />
               </div>
-
               <div>
-
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">VOLUMEN PRODUCIDO</p>
-
-                <p className="text-2xl font-bold text-green-600">{volumenTotalProduccion.toFixed(2)} m³</p>
-
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">VOLUMEN PRODUCIDO</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#09934D]">{volumenTotalProduccion.toFixed(2)} m³</p>
               </div>
-
             </div>
-
           </div>
-
-
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-
-            <div className="space-y-4">
-
+          {/* Card 3 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-10 mb-0.5">
               <div>
-
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">PIES TABLA</p>
-
-                <p className="text-2xl font-bold text-gray-900">{piesTablaTotal.toFixed(1)}</p>
-
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">PIES TABLA</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">{piesTablaTotal.toFixed(1)}</p>
               </div>
-
               <div>
-
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">PIEZAS</p>
-
-                <p className="text-2xl font-bold text-gray-900">{String(piezas.length).padStart(3, '0')}</p>
-
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">PIEZAS</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">{String(piezas.length).padStart(3, '0')}</p>
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </>
-
   );
-
 }

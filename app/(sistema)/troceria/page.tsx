@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
+import Header from '@/components/layout/Header';
 import { ApiClient } from '@/lib/apiClient';
 import { Plus, FileText, Layers } from 'lucide-react';
 
@@ -40,7 +40,7 @@ export default function TroceriaPage() {
 
       <button
         onClick={handleNuevaEntrada}
-        className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-6 font-medium"
+        className="flex items-center gap-2 px-6 py-3 bg-[#3786E6] text-white font-lexend rounded-lg hover:bg-[#0956B6] transition-colors mb-6 font-normal"
       >
         <Plus className="w-5 h-5" />
         Nueva entrada
@@ -48,23 +48,15 @@ export default function TroceriaPage() {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">LISTADO DE TROCERÍA</h2>
+          <h2 className="font-lexend font-medium text-[16px] text-[#0A2C25] mb-6 uppercase tracking-wide">LISTADO DE TROCERÍA</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
-                    Folio (Fecha)
-                  </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
-                    Turno
-                  </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3">
-                    Aserradero
-                  </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 text-center">
-                    Trozas
-                  </th>
+                <tr className="border-b border-[#c1cac7]">
+                  <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Folio (Fecha)</th>
+                  <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Turno</th>
+                  <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Aserradero</th>
+                  <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3 text-center">Trozas</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,11 +66,11 @@ export default function TroceriaPage() {
                   <tr
                     key={entrada.id}
                     onClick={() => setSelectedEntrada(entrada)}
-                    className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedEntrada?.id === entrada.id ? 'bg-blue-50' : ''
+                    className={`border-b border-[#e0e4e3] last:border-0 hover:bg-gray-400/10 transition-colors ${
+                      selectedEntrada?.id === entrada.id ? 'bg-[#f0fdf4]' : ''
                     }`}
                   >
-                    <td className="py-4 text-sm text-gray-900">
+                    <td className="font-lexend font-normal py-4 text-[14px] text-[#0A2C25]">
                       {new Date(entrada.fecha).toLocaleDateString('es-ES', {
                         day: '2-digit',
                         month: '2-digit',
@@ -90,17 +82,15 @@ export default function TroceriaPage() {
                         minute: '2-digit',
                       })}
                     </td>
-                    <td className="py-4 text-sm text-gray-600">{entrada.turno}</td>
-                    <td className="py-4 text-sm text-gray-600">{entrada.aserradero || '#1'}</td>
-                    <td className="py-4 text-sm text-gray-600 text-center">
-                      {tzs}
-                    </td>
+                    <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25]">{entrada.turno}</td>
+                    <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25]">{entrada.aserradero || '#1'}</td>
+                    <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] text-center">{tzs}</td>
                   </tr>
                   );
                 })}
                 {entradas.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
+                    <td colSpan={4} className="font-lexend font-normal py-8 text-center text-[16px] text-[#839590]">
                       No hay entradas registradas
                     </td>
                   </tr>
@@ -110,17 +100,17 @@ export default function TroceriaPage() {
           </div>
         </div>
 
+        {/* 3 Tarjetas Derecha */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase">
-                  ENTRADA SELECCIONADA
-                </p>
-                <p className="text-lg font-bold text-gray-900">
+          {/* Card 1 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-0.5">
+              <div className="w-[64px] h-[64px] bg-[#f5f5f5] rounded-2xl flex items-center justify-center flex-shrink-0">
+                <FileText className="w-8 h-8 text-[#4b5563]" />
+               </div>
+              <div className="flex flex-col justify-center">
+               <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">ENTRADA SELECCIONADA</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
                   {selectedEntrada
                     ? `${new Date(selectedEntrada.fecha).toLocaleDateString('es-ES', {
                         day: '2-digit',
@@ -138,30 +128,29 @@ export default function TroceriaPage() {
 
           {selectedEntrada && (
             <>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              {/* Card 2 */}
+              <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Layers className="w-6 h-6 text-blue-500" />
+                  <div className="w-[64px] h-[64px] bg-blue-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Layers className="w-8 h-8 text-[#3786E6]" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
-                      VOLUMEN FINAL
-                    </p>
-                    <p className="text-2xl font-bold text-blue-500">
+                    <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5"> VOLUMEN FINAL</p>
+                    <p className="font-lexend font-normal text-[25px] leading-none text-[#3786E6]">
                       {parseFloat(selectedEntrada.volumenTotal ?? selectedEntrada.volumen_total ?? selectedEntrada.volumenFinal ?? selectedEntrada.volumen_final ?? selectedEntrada.volumen ?? 0).toFixed(2)} m³
                     </p>
                   </div>
                 </div>
               </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              {/* Card 3 */}
+              <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                    <Layers className="w-6 h-6 text-orange-600" />
+                  <div className="w-[64px] h-[64px] bg-orange-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Layers className="w-8 h-8 text-[#C4670B]" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 uppercase mb-1">TROZAS (CANTIDAD)</p>
-                    <p className="text-2xl font-bold text-orange-600">
+                    <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">TROZAS (CANTIDAD)</p>
+                    <p className="font-lexend font-normal text-[25px] leading-none text-[#C4670B]">
                       {selectedEntrada.totalTrozas ?? selectedEntrada.total_trozas ?? selectedEntrada.trozas?.length ?? 0}
                     </p>
                   </div>
