@@ -29,7 +29,7 @@ const claseTypeMap: Record<string, string> = {
 
 export default function NuevaEntradaPage() {
   const router = useRouter();
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 16));
+  const [fecha, setFecha] = useState(new Date());
   const [turno, setTurno] = useState('Matutino');
   const [origen, setOrigen] = useState('S');
   const [clase, setClase] = useState('1');
@@ -108,7 +108,7 @@ export default function NuevaEntradaPage() {
     try {
       // 1. Create Entrada
       const entrada = await ApiClient.createEntradaTroceria({
-        fecha: new Date(fecha).toISOString(),
+        fecha: fecha.toISOString(),
         turno,
         origen,
         clase: parseInt(clase, 10)
@@ -164,9 +164,16 @@ export default function NuevaEntradaPage() {
               <div>
                 <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Fecha</label>
                 <input
-                  type="datetime-local"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
+                  type="date"
+                  value={`${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      const newDate = new Date(fecha);
+                      newDate.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+                      setFecha(newDate);
+                    }
+                  }}
                   className="w-full px-4 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -330,13 +337,13 @@ export default function NuevaEntradaPage() {
               <div className="flex flex-col justify-center">
                 <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">NUEVO LOTE</p>
                 <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
-                  {new Date(fecha).toLocaleDateString('es-ES', {
+                  {fecha.toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
                   })}{' '}
                   -{' '}
-                  {new Date(fecha).toLocaleTimeString('es-ES', {
+                  {fecha.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
