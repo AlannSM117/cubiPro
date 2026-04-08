@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
+import Header from '@/components/layout/Header';
 import { ApiClient } from '@/lib/apiClient';
 import { ArrowLeft, Plus, Save, Trash2, FileText, Layers } from 'lucide-react';
 
@@ -150,32 +150,32 @@ export default function NuevaEntradaPage() {
 
       <button
         onClick={() => router.push('/troceria')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+        className="flex items-center gap-2 text-[#839590] hover:text-[#0A2C25] mb-6 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">Regresar a historial de trocería</span>
+        <span className="text-sm font-lexend font-normal">Regresar a historial de trocería</span>
       </button>
 
       <div className="grid grid-cols-3 gap-6 mb-6">
         <div className="col-span-2">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">DATOS DE ENTRADA</h2>
+            <h2 className="font-lexend font-medium text-[16px] text-[#0A2C25] mb-6 uppercase tracking-wide">DATOS DE ENTRADA</h2>
             <div className="grid grid-cols-5 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Fecha</label>
                 <input
                   type="datetime-local"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Turno</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Turno</label>
                 <select
                   value={turno}
                   onChange={(e) => setTurno(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Matutino">Matutino</option>
                   <option value="Vespertino">Vespertino</option>
@@ -183,22 +183,22 @@ export default function NuevaEntradaPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Origen</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Origen</label>
                 <select
                   value={origen}
                   onChange={(e) => setOrigen(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="S">S</option>
                   <option value="M">M</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Clase</label>
+                <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Clase</label>
                 <select
                   value={clase}
                   onChange={(e) => setClase(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="1">1</option>
                   <option value="2">2</option>
@@ -210,50 +210,38 @@ export default function NuevaEntradaPage() {
           <div className="flex gap-4 mb-6">
             <button
               onClick={finalizarEntrada}
-              className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-[#08C565] text-white font-lexend rounded-lg hover:bg-[#09934D] transition-colors font-normal"
             >
               <Save className="w-5 h-5" />
               Finalizar entrada
             </button>
             <button
               onClick={descartarEntrada}
-              className="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white font-lexend rounded-lg hover:bg-red-700 transition-colors font-normal"
             >
               Descartar entrada
             </button>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">TROZAS</h2>
+            <h2 className="font-lexend font-medium text-[16px] text-[#0A2C25] mb-6 uppercase tracking-wide">TROZAS</h2>
             <div className="overflow-x-auto mb-4">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Diámetro 1
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Diámetro 2
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Largo
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Volumen m³
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Descuento %
-                    </th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase pb-3 px-2">
-                      Volumen total
-                    </th>
+                  <tr className="border-b border-[#c1cac7]">
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Diámetro 1</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Diámetro 2</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Largo</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Volumen m³</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Descuento %</th>
+                    <th className="font-lexend font-medium text-left text-[14px] text-[#839590] pb-3">Volumen total</th>
                     <th className="pb-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {trozas.map((troza) => (
-                    <tr key={troza.id} className="border-b border-gray-100">
-                      <td className="py-3 px-2">
+                    <tr key={troza.id} className="border-b border-[#e0e4e3]">
+                      <td className="font-lexend font-normal py-4 text-[12px] text-[#0A2C25] px-2">
                         <input
                           type="number"
                           step="0.01"
@@ -264,7 +252,7 @@ export default function NuevaEntradaPage() {
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </td>
-                      <td className="py-3 px-2">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
                           type="number"
                           step="0.01"
@@ -275,7 +263,7 @@ export default function NuevaEntradaPage() {
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </td>
-                      <td className="py-3 px-2">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
                           type="number"
                           step="0.01"
@@ -286,10 +274,10 @@ export default function NuevaEntradaPage() {
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </td>
-                      <td className="py-3 px-2 text-sm text-gray-600">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#839590] px-2 text-sm">
                         {troza.volumen_m3.toFixed(3)} m³
                       </td>
-                      <td className="py-3 px-2">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
                           type="number"
                           step="0.01"
@@ -304,7 +292,7 @@ export default function NuevaEntradaPage() {
                           className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </td>
-                      <td className="py-3 px-2 text-sm text-gray-900 font-medium">
+                      <td className="font-lexend font-normal py-4 text-[13px] text-[#839590] px-2 text-sm">
                         {troza.volumen_total.toFixed(3)} m³
                       </td>
                       <td className="py-3 px-2">
@@ -323,7 +311,7 @@ export default function NuevaEntradaPage() {
             </div>
             <button
               onClick={agregarTroza}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-[#3786E6] text-white font-lexend rounded-lg hover:bg-[#0956B6] transition-colors font-normal"
             >
               <Plus className="w-5 h-5" />
               Agregar troza
@@ -331,15 +319,17 @@ export default function NuevaEntradaPage() {
           </div>
         </div>
 
+        {/* 4 Tarjetas Derecha */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-600" />
+          {/* Card 1 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap- transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-0.5">
+              <div className="w-[64px] h-[64px] bg-[#f5f5f5] rounded-2xl flex items-center justify-center flex-shrink-0">
+                <FileText className="w-8 h-8 text-[#4b5563]" />
               </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase">NUEVO LOTE</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col justify-center">
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">NUEVO LOTE</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
                   {new Date(fecha).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
@@ -354,40 +344,40 @@ export default function NuevaEntradaPage() {
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="space-y-4">
+          {/* Card 2 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-10 mb-0.5">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">ASERRADERO</p>
-                <p className="text-2xl font-bold text-gray-900">{turnoAserraderoMap[turno]}</p>
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">ASERRADERO</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">{turnoAserraderoMap[turno]}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-2">TIPO</p>
-                <p className="text-2xl font-bold text-gray-900">{claseTypeMap[clase]}</p>
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">TIPO</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">{claseTypeMap[clase]}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          {/* Card 3 */}
+          <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Layers className="w-6 h-6 text-blue-500" />
+              <div className="w-[64px] h-[64px] bg-blue-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Layers className="w-8 h-8 text-[#3786E6]" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">VOLUMEN FINAL</p>
-                <p className="text-2xl font-bold text-blue-500">{volumenTotal.toFixed(2)} m³</p>
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">VOLUMEN FINAL</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#3786E6]">{volumenTotal.toFixed(2)} m³</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          {/* Card 4 */}
+          <div className="bg-white rounded-[20px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <Layers className="w-6 h-6 text-orange-600" />
+              <div className="w-[64px] h-[64px] bg-orange-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Layers className="w-8 h-8 text-[#C4670B]" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">TROZAS</p>
-                <p className="text-2xl font-bold text-orange-600">{trozas.length}</p>
+                <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">TROZAS</p>
+                <p className="font-lexend font-normal text-[25px] leading-none text-[#C4670B]">{trozas.length}</p>
               </div>
             </div>
           </div>

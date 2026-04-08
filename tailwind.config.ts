@@ -9,6 +9,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // AQUÍ AGREGAMOS LAS FUENTES NUEVAS
+      fontFamily: {
+        lexend: ['var(--font-lexend)', 'sans-serif'],     // Lexend como fuente principal
+        roboto: ['var(--font-roboto)', 'sans-serif'],   // Roboto como fuente secundaria
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
