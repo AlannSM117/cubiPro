@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { ApiClient } from '@/lib/apiClient';
@@ -10,10 +10,10 @@ type PiezaForm = {
   id: string;
   grueso: string;
   clase: string;
-  ancho: number;
-  largo: number;
-  verde: number;
-  estufa: number;
+  ancho: string;
+  largo: string;
+  verde: string;
+  estufa: string;
   pies_tabla: number;
   volumen_m3: number;
 };
@@ -42,6 +42,9 @@ const turnoAserraderoMap: Record<string, number> = {
   'Nocturno': 3,
 };
 
+// Tipos de campos numéricos con decimales que deben auto-avanzar
+type DecimalField = 'ancho' | 'largo';
+
 export default function NuevaProduccionPage() {
   const router = useRouter();
   const [fecha, setFecha] = useState(new Date());
@@ -51,31 +54,52 @@ export default function NuevaProduccionPage() {
       id: crypto.randomUUID(),
       grueso: '',
       clase: '2',
-      ancho: 0,
-      largo: 0,
-      verde: 0,
-      estufa: 0,
+      ancho: '',
+      largo: '',
+      verde: '',
+      estufa: '',
       pies_tabla: 0,
       volumen_m3: 0,
     },
   ]);
 
-  function calcularPiesTabla(pieza: Omit<PiezaForm, 'pies_tabla'|'volumen_m3'>) {
-    const gruesoVal = parseFraction(pieza.grueso);
-    const pzas = pieza.verde + pieza.estufa;
-    if (pzas === 0 || gruesoVal === 0 || pieza.ancho === 0 || pieza.largo === 0) return 0;
-    // (PZAS x GRUESO x ANCHO x LARGO) / 12
-    return (pzas * gruesoVal * pieza.ancho * pieza.largo) / 12;
+  // Refs para los inputs numéricos con decimal por pieza
+  // rowRefs[piezaId][campo] = ref al input
+  const rowRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
+
+  function getRef(piezaId: string, field: string) {
+    if (!rowRefs.current[piezaId]) rowRefs.current[piezaId] = {};
+    return (el: HTMLInputElement | null) => {
+      rowRefs.current[piezaId][field] = el;
+    };
   }
 
-  function calcularVolumen(pieza: Omit<PiezaForm, 'pies_tabla'|'volumen_m3'>) {
+  function focusNext(piezaId: string, currentField: string) {
+    const order = ['grueso', 'clase', 'ancho', 'largo', 'verde', 'estufa'];
+    const idx = order.indexOf(currentField);
+    if (idx === -1) return;
+    for (let i = idx + 1; i < order.length; i++) {
+      const next = rowRefs.current[piezaId]?.[order[i]];
+      if (next) {
+        next.focus();
+        next.select();
+        return;
+      }
+    }
+  }
+
+  function calcularPiesTabla(pieza: Omit<PiezaForm, 'pies_tabla' | 'volumen_m3'>) {
     const gruesoVal = parseFraction(pieza.grueso);
-    const pzas = pieza.verde + pieza.estufa;
-    if (pzas === 0 || gruesoVal === 0 || pieza.ancho === 0 || pieza.largo === 0) return 0;
-    // Convertir de ft a m3 basado en conversiones estándar o mantener la original según necesidad
-    // 1 pie tabla = 0.002359737 m3
-    const piesTabla = (pzas * gruesoVal * pieza.ancho * pieza.largo) / 12;
-    return piesTabla * 0.002359737; 
+    const pzas = (parseInt(pieza.verde || '0') || 0) + (parseInt(pieza.estufa || '0') || 0);
+    const ancho = parseFloat(pieza.ancho) || 0;
+    const largo = parseFloat(pieza.largo) || 0;
+    if (pzas === 0 || gruesoVal === 0 || ancho === 0 || largo === 0) return 0;
+    return (pzas * gruesoVal * ancho * largo) / 12;
+  }
+
+  function calcularVolumen(pieza: Omit<PiezaForm, 'pies_tabla' | 'volumen_m3'>) {
+    const piesTabla = calcularPiesTabla(pieza);
+    return piesTabla * 0.002359737;
   }
 
   function handlePiezaChange(id: string, field: keyof PiezaForm, value: any) {
@@ -83,7 +107,7 @@ export default function NuevaProduccionPage() {
       prev.map((pieza) => {
         if (pieza.id === id) {
           const updated = { ...pieza, [field]: value };
-          if (field === 'verde' || field === 'estufa' || field === 'grueso' || field === 'ancho' || field === 'largo') {
+          if (['verde', 'estufa', 'grueso', 'ancho', 'largo'].includes(field as string)) {
             return {
               ...updated,
               pies_tabla: calcularPiesTabla(updated),
@@ -97,6 +121,65 @@ export default function NuevaProduccionPage() {
     );
   }
 
+  // Auto-avanza al primer decimal en campos ancho / largo
+  function handleDecimalKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    piezaId: string,
+    field: DecimalField,
+  ) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      focusNext(piezaId, field);
+      return;
+    }
+    if (e.key === '.') {
+      // Si ya tiene punto, avanzar al siguiente campo
+      const current = (e.currentTarget as HTMLInputElement).value;
+      if (current.includes('.')) {
+        e.preventDefault();
+        focusNext(piezaId, field);
+      }
+      // Si no tiene punto, dejamos escribirlo normalmente,
+      // pero programamos avance después del render
+      else {
+        setTimeout(() => {
+          const val = rowRefs.current[piezaId]?.[field]?.value ?? '';
+          if (val.includes('.')) {
+            // Ya se escribió el punto, esperamos el primer dígito decimal
+            // — no hacemos nada todavía, el onChange lo manejará
+          }
+        }, 0);
+      }
+    }
+  }
+
+  function handleDecimalChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    piezaId: string,
+    field: DecimalField,
+  ) {
+    const val = e.target.value;
+    handlePiezaChange(piezaId, field, val);
+
+    // Si ya ingresó un dígito después del punto, avanzar
+    const decimalMatch = val.match(/\.\d/);
+    if (decimalMatch) {
+      // Tiene al menos un decimal escrito → avanzar
+      requestAnimationFrame(() => focusNext(piezaId, field));
+    }
+  }
+
+  function handleIntKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    piezaId: string,
+    field: string,
+  ) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      focusNext(piezaId, field);
+    }
+  }
+
   function agregarPieza() {
     setPiezas([
       ...piezas,
@@ -104,10 +187,10 @@ export default function NuevaProduccionPage() {
         id: crypto.randomUUID(),
         grueso: '',
         clase: '2',
-        ancho: 0,
-        largo: 0,
-        verde: 0,
-        estufa: 0,
+        ancho: '',
+        largo: '',
+        verde: '',
+        estufa: '',
         pies_tabla: 0,
         volumen_m3: 0,
       },
@@ -122,27 +205,23 @@ export default function NuevaProduccionPage() {
 
   async function finalizarEntrada() {
     try {
-      // 1. Create Entrada
       const entrada = await ApiClient.createEntradaProduccion({
         fecha: fecha.toISOString(),
         turno,
       });
 
-      // 2. Add each Pieza
       for (const p of piezas) {
         await ApiClient.addPieza(entrada.id, {
           grueso: parseFraction(p.grueso),
           clase: parseInt(p.clase, 10),
-          ancho: p.ancho,
-          largo: p.largo,
-          verde: p.verde,
-          estufa: p.estufa,
+          ancho: parseFloat(p.ancho) || 0,
+          largo: parseFloat(p.largo) || 0,
+          verde: parseInt(p.verde || '0', 10) || 0,
+          estufa: parseInt(p.estufa || '0', 10) || 0,
         });
       }
 
-      // 3. Finalize Entrada
       await ApiClient.finalizarEntradaProduccion(entrada.id);
-
       router.push('/produccion');
     } catch (e: any) {
       alert('Error en el proceso: ' + e.message);
@@ -157,7 +236,8 @@ export default function NuevaProduccionPage() {
 
   const volumenTotalProduccion = piezas.reduce((sum, p) => sum + p.volumen_m3, 0);
   const piesTablaTotal = piezas.reduce((sum, p) => sum + p.pies_tabla, 0);
-  const piezasUnidadesTotal = piezas.reduce((sum, p) => sum + p.verde + p.estufa, 0);
+
+  const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded text-sm font-lexend focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
   return (
     <>
@@ -252,24 +332,29 @@ export default function NuevaProduccionPage() {
                 <tbody>
                   {piezas.map((pieza) => (
                     <tr key={pieza.id} className="border-b border-[#e0e4e3]">
+                      {/* Grueso */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
+                          ref={getRef(pieza.id, 'grueso')}
                           type="text"
                           value={pieza.grueso}
-                          onChange={(e) =>
-                            handlePiezaChange(pieza.id, 'grueso', e.target.value)
-                          }
+                          onChange={(e) => handlePiezaChange(pieza.id, 'grueso', e.target.value)}
+                          onKeyDown={(e) => handleIntKeyDown(e, pieza.id, 'grueso')}
                           placeholder="Ej. 1 1/2"
-                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-
                       </td>
 
+                      {/* Clase */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <select
+                          ref={getRef(pieza.id, 'clase')}
                           value={pieza.clase}
                           onChange={(e) => handlePiezaChange(pieza.id, 'clase', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); focusNext(pieza.id, 'clase'); }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="2">2</option>
                           <option value="3">3</option>
@@ -277,50 +362,58 @@ export default function NuevaProduccionPage() {
                           <option value="5">5</option>
                         </select>
                       </td>
-                      
+
+                      {/* Ancho — auto-avance al primer decimal */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
+                          ref={getRef(pieza.id, 'ancho')}
                           type="number"
                           step="0.01"
                           value={pieza.ancho}
-                          onChange={(e) =>
-                            handlePiezaChange(pieza.id, 'ancho', parseFloat(e.target.value) || 0)
-                          }
-                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={(e) => handleDecimalChange(e, pieza.id, 'ancho')}
+                          onKeyDown={(e) => handleDecimalKeyDown(e, pieza.id, 'ancho')}
+                          placeholder="0.00"
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
 
+                      {/* Largo — auto-avance al primer decimal */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
+                          ref={getRef(pieza.id, 'largo')}
                           type="number"
                           step="0.01"
                           value={pieza.largo}
-                          onChange={(e) =>
-                            handlePiezaChange(pieza.id, 'largo', parseFloat(e.target.value) || 0)
-                          }
-                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={(e) => handleDecimalChange(e, pieza.id, 'largo')}
+                          onKeyDown={(e) => handleDecimalKeyDown(e, pieza.id, 'largo')}
+                          placeholder="0.00"
+                          className="w-20 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
 
+                      {/* Verde */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
+                          ref={getRef(pieza.id, 'verde')}
                           type="number"
                           value={pieza.verde}
-                          onChange={(e) =>
-                            handlePiezaChange(pieza.id, 'verde', parseInt(e.target.value) || 0)
-                          }
-                          className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={(e) => handlePiezaChange(pieza.id, 'verde', e.target.value)}
+                          onKeyDown={(e) => handleIntKeyDown(e, pieza.id, 'verde')}
+                          placeholder="0"
+                          className="w-16 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
 
+                      {/* Estufa */}
                       <td className="font-lexend font-normal py-4 text-[13px] text-[#0A2C25] px-2">
                         <input
+                          ref={getRef(pieza.id, 'estufa')}
                           type="number"
                           value={pieza.estufa}
-                          onChange={(e) =>
-                            handlePiezaChange(pieza.id, 'estufa', parseInt(e.target.value) || 0)
-                          }
-                          className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={(e) => handlePiezaChange(pieza.id, 'estufa', e.target.value)}
+                          onKeyDown={(e) => handleIntKeyDown(e, pieza.id, 'estufa')}
+                          placeholder="0"
+                          className="w-16 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
 
@@ -357,9 +450,8 @@ export default function NuevaProduccionPage() {
           </div>
         </div>
 
-        {/* 4 Tarjetas Derecha */}
+        {/* Tarjetas laterales */}
         <div className="space-y-6">
-          {/* Card 1 */}
           <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-center gap-3 mb-0.5">
               <div className="w-[64px] h-[64px] bg-[#f5f5f5] rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -368,21 +460,13 @@ export default function NuevaProduccionPage() {
               <div className="flex flex-col justify-center">
                 <p className="font-lexend font-medium text-[12px] text-[#0A2C25] uppercase tracking-wider mb-1.5">NUEVA ENTRADA</p>
                 <p className="font-lexend font-normal text-[25px] leading-none text-[#0A2C25]">
-                  {fecha.toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}{' '}
+                  {fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}{' '}
                   -{' '}
-                  {fecha.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>
           </div>
-          {/* Card 2 */}
           <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-start gap-4">
               <div className="w-[64px] h-[64px] bg-green-50 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -394,7 +478,6 @@ export default function NuevaProduccionPage() {
               </div>
             </div>
           </div>
-          {/* Card 3 */}
           <div className="bg-white rounded-[15px] p-3 shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:shadow-md">
             <div className="flex items-center gap-10 mb-0.5">
               <div>

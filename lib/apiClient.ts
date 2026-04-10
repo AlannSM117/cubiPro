@@ -116,6 +116,37 @@ export class ApiClient {
     return res.json();
   }
 
+  static async getTrozasByEntrada(entradaId: string) {
+    const res = await fetch(`${API_URL}/troceria/${entradaId}`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error('Error al obtener trozas');
+    const data = await res.json();
+    // La entrada completa viene con las trozas embebidas
+    return Array.isArray(data?.trozas) ? data.trozas : [];
+  }
+
+  static async updateTroza(entradaId: string, trozaId: string, data: { diametro1?: number, diametro2?: number, largo?: number, descuento?: number }) {
+    const res = await fetch(`${API_URL}/troceria/${entradaId}/trozas/${trozaId}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const resp = await res.json().catch(() => null);
+      const msg = resp?.message ? (Array.isArray(resp.message) ? resp.message.join(', ') : resp.message) : 'Error al actualizar troza';
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  static async deleteTroza(entradaId: string, trozaId: string) {
+    const res = await fetch(`${API_URL}/troceria/${entradaId}/trozas/${trozaId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error('Error al eliminar troza');
+    return res.json().catch(() => ({}));
+  }
+
   static async finalizarEntrada(entradaId: string) {
     const res = await fetch(`${API_URL}/troceria/${entradaId}/finalizar`, {
       method: 'PATCH',
@@ -170,6 +201,36 @@ export class ApiClient {
     });
     if (!res.ok) throw new Error('Error al finalizar entrada de producción');
     return res.json();
+  }
+
+  static async getPiezasByEntrada(entradaId: string) {
+    const res = await fetch(`${API_URL}/produccion/${entradaId}`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error('Error al obtener piezas');
+    const data = await res.json();
+    return Array.isArray(data?.piezas) ? data.piezas : [];
+  }
+
+  static async updatePieza(entradaId: string, piezaId: string, data: { grueso?: number, clase?: number, ancho?: number, largo?: number, verde?: number, estufa?: number }) {
+    const res = await fetch(`${API_URL}/produccion/${entradaId}/piezas/${piezaId}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const resp = await res.json().catch(() => null);
+      const msg = resp?.message ? (Array.isArray(resp.message) ? resp.message.join(', ') : resp.message) : 'Error al actualizar pieza';
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  static async deletePieza(entradaId: string, piezaId: string) {
+    const res = await fetch(`${API_URL}/produccion/${entradaId}/piezas/${piezaId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error('Error al eliminar pieza');
+    return res.json().catch(() => ({}));
   }
 
   // --- USUARIOS --- //
