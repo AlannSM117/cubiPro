@@ -12,7 +12,7 @@ export class ApiClient {
     };
   }
 
-  // --- AUTH --- //
+  // AUTH
   static async login(data: any) {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -62,7 +62,7 @@ export class ApiClient {
     }
   }
 
-  // --- DASHBOARD --- //
+  // DASHBOARD
   static async getDashboardMetrics() {
     const res = await fetch(`${API_URL}/dashboard/metrics`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error('Error al obtener métricas');
@@ -81,7 +81,7 @@ export class ApiClient {
     return res.json();
   }
 
-  // --- TROCERIA --- //
+  // TROCERIA
   static async getTrocerias() {
     const res = await fetch(`${API_URL}/troceria`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error('Error al obtener trocerias');
@@ -156,7 +156,7 @@ export class ApiClient {
     return res.json();
   }
 
-  // --- PRODUCCION --- //
+  // PRODUCCION
   static async getProducciones() {
     const res = await fetch(`${API_URL}/produccion`, { headers: this.getHeaders() });
     if (!res.ok) {
@@ -233,7 +233,7 @@ export class ApiClient {
     return res.json().catch(() => ({}));
   }
 
-  // --- USUARIOS --- //
+  // USUARIOS
   static async getUsers() {
     const res = await fetch(`${API_URL}/users`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error('Error al obtener usuarios');
@@ -270,7 +270,7 @@ export class ApiClient {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error('Error al eliminar usuario');
-    // Delete might return empty or JSON depending on backend
+    // La función Delete puede devolver un valor vacío o un objeto JSON, dependiendo del backend
     return res.json().catch(() => ({}));
   }
 }

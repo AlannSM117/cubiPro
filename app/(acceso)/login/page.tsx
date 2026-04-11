@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-white">
       
       {/* Left Dark Green Panel */}
-      <div className="w-full md:w-[25%] lg:w-[30%] min-h-[35vh] md:min-h-screen bg-[#0A2C25] flex items-center justify-center p-8 md:p-12 text-center text-white relative">
+      <div className="w-full md:w-[30%] lg:w-[40%] min-h-[30vh] md:h-[90vh] md:my-auto bg-[#0B2519] flex items-center justify-center p-8 md:p-12 text-center text-white relative m-0 md:ml-4 rounded-b-[40px] md:rounded-3xl shadow-xl md:shadow-2xl flex-shrink-0 z-10">
         <div className="flex flex-col items-center space-y-6">
           <h2 className="text-[40px] font-lexend font-light text-[#DBF0DD] mb-4">Bienvenidos a</h2>
           
@@ -60,7 +60,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right White Content Panel */}
-      <div className="w-full md:w-[75%] lg:w-[70%] min-h-screen flex items-center justify-center p-8 lg:p-14 bg-white">
+      <div className="w-full md:w-[75%] lg:w-[70%] min-h-screen flex items-center justify-center p-8 lg:p-4 bg-white">
         
         <div className="w-full max-w-2xl px-4">
           <div className="mb-8">

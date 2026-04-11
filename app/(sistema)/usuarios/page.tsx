@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header';
 import { ApiClient } from '@/lib/apiClient';
 import { Eye, EyeOff, Edit, Trash2 } from 'lucide-react';
+
+// Componentes
+import Header from '@/components/layout/Header';
+import { DiscardConfirmModal } from '@/components/modals/DiscardConfirmModal';
 
 export default function UsuariosPage() {
   const router = useRouter();
@@ -35,6 +38,9 @@ export default function UsuariosPage() {
   const [editRepeatNewPassword, setEditRepeatNewPassword] = useState('');
   const [editShowNewPwd, setEditShowNewPwd] = useState(false);
   const [editShowRepNewPwd, setEditShowRepNewPwd] = useState(false);
+
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const user = ApiClient.getUserFromToken();
@@ -93,14 +99,22 @@ export default function UsuariosPage() {
     setRole('');
   }
 
-  async function handleDeleteUser(id: string) {
-    if (confirm('¿Está seguro de eliminar este usuario?')) {
-      try {
-        await ApiClient.deleteUser(id);
-        loadUsuarios();
-      } catch (e: any) {
-        alert('Error: ' + e.message);
-      }
+  async function handleDeleteUser(user: any) {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
+  }
+
+  // Esta es la función que realmente llamará a la API
+  async function confirmDelete() {
+    if (!userToDelete) return;
+    try {
+      await ApiClient.deleteUser(userToDelete.id);
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+      loadUsuarios();
+      // Aquí podrías usar un toast o alerta de éxito
+    } catch (e: any) {
+      alert('Error: ' + e.message);
     }
   }
 
@@ -175,7 +189,7 @@ export default function UsuariosPage() {
           <p className="font-lexend font-normal text-[12px] text-[#839590] uppercase tracking-wide">INGRESO DE DATOS PARA REGISTRAR UN NUEVO USUARIO</p>
         </div>
 
-        <div className="grid grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-3 gap-4 items-end">
           <div>
             <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Nombre(s)</label>
             <input
@@ -183,7 +197,7 @@ export default function UsuariosPage() {
               value={nombres}
               onChange={(e) => setNombres(e.target.value)}
               placeholder="Ingrese el nombre(s)"
-              className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full px-2 py-4 font-lexend font-normal text border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
           <div>
@@ -214,7 +228,7 @@ export default function UsuariosPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ingrese la contraseña"
-                className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                 {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -229,7 +243,7 @@ export default function UsuariosPage() {
                 value={repeatPassword}
                 onChange={(e) => setRepeatPassword(e.target.value)}
                 placeholder="Repita la contraseña"
-                className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <button type="button" onClick={() => setShowRepeatPwd(!showRepeatPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                 {showRepeatPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -255,13 +269,13 @@ export default function UsuariosPage() {
             <button
               onClick={handleCreateUser}
               disabled={isLoading}
-              className="flex items-center gap-2 px-6 py-3 bg-[#3786E6] text-white font-lexend rounded-lg hover:bg-[#0956B6] transition-colors font-normal"
+              className="flex items-center gap-2 px-6 py-3 bg-[#3786E6] text-white font-lexend rounded-xl hover:bg-[#0956B6] transition-colors font-normal text-[14px] shadow-lg shadow-blue-500/20"
             >
               Crear nuevo usuario
             </button>
             <button
               onClick={limpiarFormulario}
-              className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white font-lexend rounded-lg hover:bg-red-700 transition-colors font-normal"
+              className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 rounded-xl font-lexend font-medium transition-all text-[14px]"
             >
               Limpiar formulario
             </button>
@@ -294,11 +308,11 @@ export default function UsuariosPage() {
                   <td className="pfont-lexend font-medium py-4 text-center text-[13px] text-[#0A2C25]">{u.username}</td>
                   <td className="font-lexend font-normal py-4 text-center text-[13px] text-[#0A2C25]">{u.role}</td>
                   <td className="py-4 px-4 flex justify-center gap-4 text-gray-400">
-                    <button onClick={() => openEditModal(u)} className="hover:text-emerald-500 transition-colors">
-                      <Edit className="w-4 h-4" />
+                    <button onClick={() => openEditModal(u)} className="w-7 h-7 rounded-md bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center">
+                      <Edit className="w-3.5 h-3.5 text-emerald-500" />
                     </button>
-                    <button onClick={() => handleDeleteUser(u.id)} className="hover:text-red-500 transition-colors">
-                      <Trash2 className="w-4 h-4" />
+                    <button onClick={() => handleDeleteUser(u)} className="w-7 h-7 rounded-md bg-red-100 hover:bg-red-200 flex items-center justify-center">
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 " />
                     </button>
                   </td>
                 </tr>
@@ -313,84 +327,161 @@ export default function UsuariosPage() {
         </div>
       </div>
 
+      {/* Modal de Edición de Usuario */}
       {editingUser && (
-        <div className="backdrop-blur-sm fixed inset-0 bg-[#0A2C25]/20 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl">
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <p className="font-lexend font-medium text-[16px] text-[#0A2C25] uppercase tracking-wide mb-1">DATOS DEL USUARIO</p>
-                <p className="font-lexend font-normal text-[12px] text-[#839590] uppercase tracking-wide mb-6">EDITAR Y GUARDAR DE FORMA CORRECTA LOS DATOS</p>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block font-lexend font-medium text-[14px] text-[#839590] mb-1">Nombre(s)</label>
-                    <input type="text" value={editNombres} onChange={(e)=>setEditNombres(e.target.value)} className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          <div className="backdrop-blur-sm fixed inset-0 bg-[#0A2C25]/20 flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[24px] shadow-2xl p-8 w-full max-w-4xl border border-gray-100 animate-in zoom-in-95 slide-in-from-top-2 duration-200">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+                {/* LADO IZQUIERDO: DATOS GENERALES */}
+                <div>
+                  <div className="mb-8">
+                    <p className="font-lexend font-medium text-[16px] text-[#0A2C25] uppercase tracking-wide mb-1">DATOS DEL USUARIO</p>
+                    <p className="font-lexend font-normal text-[12px] text-[#839590] uppercase tracking-wide">EDITAR Y GUARDAR DE FORMA CORRECTA LOS DATOS</p>
                   </div>
-                  <div>
-                    <label className="block font-lexend font-medium text-[14px] text-[#839590] mb-1">Apellidos</label>
-                    <input type="text" value={editApellidos} onChange={(e)=>setEditApellidos(e.target.value)} className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block font-lexend font-medium text-[14px] text-[#839590] mb-1">Nombre de usuario</label>
-                    <input type="text" value={editUsername} onChange={(e)=>setEditUsername(e.target.value)} className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block font-lexend font-medium text-[14px] text-[#839590] mb-1">Contraseña</label>
-                    <div className="relative">
-                      <input type={editShowPwdAcc ? "text" : "password"} value={editPasswordAcc} onChange={(e)=>setEditPasswordAcc(e.target.value)} className="w-full px-2 py-3 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"  />
-                      <button type="button" onClick={() => setEditShowPwdAcc(!editShowPwdAcc)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#839590]">
-                        {editShowPwdAcc ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre(s)</label>
+                      <input 
+                        type="text" 
+                        value={editNombres} 
+                        onChange={(e)=>setEditNombres(e.target.value)} 
+                        className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Apellidos</label>
+                      <input 
+                        type="text" 
+                        value={editApellidos} 
+                        onChange={(e)=>setEditApellidos(e.target.value)} 
+                        className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre de usuario</label>
+                      <input 
+                        type="text" 
+                        value={editUsername} 
+                        onChange={(e)=>setEditUsername(e.target.value)} 
+                        className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Rol</label>
+                      <select 
+                        value={editRole} 
+                        onChange={(e)=>setEditRole(e.target.value)} 
+                        className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all"
+                      >
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="JEFATURA">JEFATURA</option>
+                      </select>
                     </div>
                   </div>
-                  <div>
-                    <label className="block font-lexend font-medium text-[14px] text-[#839590] mb-1">Rol</label>
-                    <select value={editRole} onChange={(e)=>setEditRole(e.target.value)} className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="JEFATURA">JEFATURA</option>
-                    </select>
+                </div>
+
+                {/* LADO DERECHO: SEGURIDAD (RESETEO DE CONTRASEÑA) */}
+                <div className="bg-[#F4F7F6]/60 p-6 rounded-[20px] border border-gray-100 flex flex-col">
+                  <div className="mb-6">
+                    <p className="font-lexend font-medium text-[16px] text-[#0A2C25] uppercase tracking-wide mb-1">SEGURIDAD</p>
+                    <p className="font-lexend font-normal text-[12px] text-[#839590] uppercase tracking-wide">RESETEAR CONTRASEÑA (OPCIONAL)</p>
+                  </div>
+
+                  <div className="space-y-5 flex-1">
+
+                    {/* Mensaje Educativo */}
+                    <div className="bg-blue-50/60 border border-blue-100/60 p-4 rounded-xl mb-2">
+                      <p className="text-[12px] text-blue-800/80 leading-relaxed font-lexend font-normal">
+                        Por seguridad, las contraseñas actuales están encriptadas y no son visibles. Si el usuario perdió su acceso, asígnele una nueva contraseña aquí.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nueva contraseña</label>
+                      <div className="relative">
+                        <input 
+                          type={editShowNewPwd ? "text" : "password"} 
+                          value={editNewPassword} 
+                          onChange={(e)=>setEditNewPassword(e.target.value)} 
+                          placeholder="••••••••••••" 
+                          className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all bg-white [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setEditShowNewPwd(!editShowNewPwd)} 
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#839590] hover:text-[#039343] transition-colors"
+                        >
+                          {editShowNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Confirmar contraseña nueva</label>
+                      <div className="relative">
+                        <input 
+                          type={editShowRepNewPwd ? "text" : "password"} 
+                          value={editRepeatNewPassword} 
+                          onChange={(e)=>setEditRepeatNewPassword(e.target.value)} 
+                          placeholder="••••••••••••" 
+                          className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all bg-white [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setEditShowRepNewPwd(!editShowRepNewPwd)} 
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#839590] hover:text-[#039343] transition-colors"
+                        >
+                          {editShowRepNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <p className="font-lexend font-medium text-[16px] text-[#0A2C25] uppercase tracking-wide mb-1 invisible">CAMBIAR CONTRASEÑA</p>
-                <p className="font-lexend font-normal text-[12px] text-[#839590] uppercase tracking-wide mb-6">CAMBIAR CONTRASEÑA</p>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Contraseña nueva</label>
-                    <div className="relative">
-                      <input type={editShowNewPwd ? "text" : "password"} value={editNewPassword} onChange={(e)=>setEditNewPassword(e.target.value)} placeholder="••••••••••••" className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"/>
-                      <button type="button" onClick={() => setEditShowNewPwd(!editShowNewPwd)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#839590]">
-                        {editShowNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Repetir contraseña nueva</label>
-                    <div className="relative">
-                      <input type={editShowRepNewPwd ? "text" : "password"} value={editRepeatNewPassword} onChange={(e)=>setEditRepeatNewPassword(e.target.value)} placeholder="••••••••••••" className="w-full px-2 py-3 text-[#0A2C25] font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"/>
-                      <button type="button" onClick={() => setEditShowRepNewPwd(!editShowRepNewPwd)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#839590]">
-                        {editShowRepNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              {/* BOTONES DE ACCIÓN */}
+              <div className="flex justify-center gap-4 mt-12 pt-8 border-t border-gray-100 w-full max-w-md mx-auto">
+                <button onClick={handleUpdateUser} className="flex-1 px-6 py-3.5 bg-[#3786E6] hover:bg-[#0956B6] text-white rounded-xl font-lexend font-medium transition-all text-[14px] shadow-lg shadow-blue-500/20">
+                  Guardar datos
+                </button>
+                <button onClick={closeEditModal} className="flex-1 px-6 py-3.5 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 rounded-xl font-lexend font-medium transition-all text-[14px]">
+                  Cancelar
+                </button>
               </div>
-            </div>
-
-            <div className="flex justify-center gap-6 mt-10 w-full max-w-sm mx-auto">
-              <button onClick={handleUpdateUser} className="w-full px-6 py-3 bg-[#3786E6] hover:bg-[#0956B6] text-white rounded-lg font-lexend font-normal transition-colors text-sm">
-                Guardar datos
-              </button>
-              <button onClick={closeEditModal} className="w-full px-6 py-3 bg-red-500 hover:bg-red-700 text-white rounded-lg font-lexend font-normal transition-colors text-sm">
-                Cancelar
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
+      {/* Modal de Confirmación para Eliminar Usuario */}
+      <DiscardConfirmModal 
+        isOpen={showDeleteConfirm}
+        title="¿Eliminar usuario?"
+        description={
+          <>
+            Estás a punto de eliminar permanentemente a{' '}
+            <span className="font-medium text-[#dc0a0e]">
+              {userToDelete?.nombres || userToDelete?.username 
+                ? `${userToDelete.nombres || ''} ${userToDelete.apellidos || ''}`.trim() 
+                : 'este usuario'} 
+              {userToDelete?.username ? ` (${userToDelete.username})` : ''}
+            </span>
+            . Esta acción no se puede deshacer.
+          </>
+        }
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onClose={() => {
+            setShowDeleteConfirm(false);
+            setUserToDelete(null);
+          }
+        }
+        onConfirm={confirmDelete}
+        icon={<Trash2 className="w-8 h-8 text-red-500" />}
+        iconBgColor="bg-red-50"
+        confirmBtnColor="bg-red-500 hover:bg-red-600 shadow-red-200"
+      />
     </>
   );
 }

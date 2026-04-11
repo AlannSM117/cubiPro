@@ -63,14 +63,9 @@ export default function RootLayout({
         {isAuthRoute ? (
           <div>{children}</div>
         ) : (
-          // CAMBIO CLAVE: Agregamos flex-col para móvil y lg:flex-row para PC
           <div className="flex flex-col lg:flex-row bg-[#f4f7f6] min-h-screen">
-            
-            {/* Nuestro Sidebar ahora es inteligente y sabe cómo verse en celular vs PC */}
             <Sidebar />
-            
             <main className="flex-1 min-h-screen overflow-y-auto">
-              {/* Ajustamos un poco el padding en móvil (p-4) y en PC (md:p-8) */}
               <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
                 {children}
               </div>
