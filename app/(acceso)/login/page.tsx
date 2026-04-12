@@ -4,10 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiClient } from '@/lib/apiClient';
 import { User, Lock, Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react';
-// ELIMINAMOS Link porque usaremos un button para abrir el modal
-// import Link from 'next/link';
 
-// 1. IMPORTAMOS EL MODAL
+// Componentes
 import { DiscardConfirmModal } from '@/components/modals/DiscardConfirmModal';
 
 export default function LoginPage() {
@@ -18,10 +16,9 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
 
-  // ESTADO PARA CONTROLAR EL MODAL
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -45,8 +42,6 @@ export default function LoginPage() {
   return (
     <>
       <div className="min-h-screen w-full flex flex-col md:flex-row bg-white">
-        
-        {/* Left Dark Green Panel */}
         <div className="w-full md:w-[30%] lg:w-[40%] min-h-[30vh] md:h-[90vh] md:my-auto bg-[#0B2519] flex items-center justify-center p-8 md:p-12 text-center text-white relative m-0 md:ml-4 rounded-b-[40px] md:rounded-3xl shadow-xl md:shadow-2xl flex-shrink-0 z-10">
           <div className="flex flex-col items-center space-y-6">
             <h2 className="text-[40px] font-lexend font-light text-[#DBF0DD] mb-4">Bienvenidos a</h2>
@@ -67,7 +62,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right White Content Panel */}
         <div className="w-full md:w-[75%] lg:w-[70%] min-h-screen flex items-center justify-center p-8 lg:p-4 bg-white">
           
           <div className="w-full max-w-2xl px-4">
@@ -78,7 +72,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Form Box Container */}
             <div className="border border-gray-200 rounded-2xl p-8 lg:p-12 shadow-sm">
               <h3 className="text-2xl font-lexend font-normal text-center text-[#0A2C25] mb-8">
                 Credenciales de acceso
@@ -105,7 +98,7 @@ export default function LoginPage() {
                       disabled={isLoading}
                     />
                   </div>
-                  {/* Contenedor con altura fija para que el error no empuje el diseño */}
+
                   <div className="h-5 mt-1"> 
                     {error && (
                       <p className="text-[11px] text-red-500 font-lexend font-normal leading-tight">
@@ -150,7 +143,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Real API Error Message (Optional display, since mockup shows inline messages) */}
                 {error && error !== 'Error al iniciar sesión' && (
                   <div className="flex items-start gap-2 p-3 bg-red-50 text-red-600 rounded-md text-xs">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -168,7 +160,6 @@ export default function LoginPage() {
                   </button>
                 </div>
                 
-                {/* 2. CAMBIAMOS EL ENLACE POR UN BOTÓN PARA ABRIR EL MODAL */}
                 <div className="text-center mt-4">
                   <button 
                     type="button"
@@ -186,7 +177,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* 3. AGREGAMOS EL MODAL FUERA DEL FLUJO PRINCIPAL */}
+
       <DiscardConfirmModal 
         isOpen={showForgotModal}
         title="¿PROBLEMAS DE ACCESO?"
