@@ -80,12 +80,15 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-6">
                 
                 <div>
-                  <label className={`flex items-center gap-2 text-sm font-lexend font-normal mb-2 ${error ? 'text-red-500' : 'text-[#839590]'}`}>
+                  <label htmlFor="username" className={`flex items-center gap-2 text-sm font-lexend font-normal mb-2 ${error ? 'text-red-500' : 'text-[#839590]'}`}>
                     <User className={`w-4 h-4 ${error ? 'text-red-500' : 'text-[#839590]'}`} />
                     Nombre de usuario
                   </label>
                   <div className="relative">
                     <input
+                      id="username"
+                      name="username"
+                      autoComplete="username"
                       type="text"
                       value={username}
                       onChange={(e) => {
@@ -109,12 +112,15 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className={`flex items-center gap-2 text-sm font-lexend font-normal mb-2 ${error ? 'text-red-500' : 'text-[#839590]'}`}>
+                  <label htmlFor="password" className={`flex items-center gap-2 text-sm font-lexend font-normal mb-2 ${error ? 'text-red-500' : 'text-[#839590]'}`}>
                     <Lock className={`w-4 h-4 ${error ? 'text-red-500' : 'text-[#839590]'}`} />
                     Contraseña
                   </label>
                   <div className="relative">
                     <input
+                      id="password"
+                      name="password"
+                      autoComplete="current-password"
                       type={showPwd ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => {

@@ -86,11 +86,18 @@ function EditPiezaRow({ pieza, index, entradaId, onSaved, onCancel }: {
       <tr className="border-b border-[#e0e4e3] last:border-0 hover:bg-gray-400/10 transition-colors">
         <td className="font-lexend font-normal py-3 text-[12px] text-[#0A2C25] px-2">{index + 1}</td>
         <td className="py-2 pr-2">
-          <input className={input} value={form.grueso} placeholder="Ej. 1 1/2"
+          <input
+            id={`edit-pieza-${pieza.id}-grueso`}
+            name="edit-pieza-grueso"
+            className={input} value={form.grueso} placeholder="Ej. 1 1/2"
             onChange={(e) => setForm({ ...form, grueso: e.target.value })} />
         </td>
         <td className="py-2 pr-2">
-          <select className={input} value={form.clase}
+          <select
+            id={`edit-pieza-${pieza.id}-clase`}
+            name="edit-pieza-clase"
+            aria-label="Clase de pieza"
+            className={input} value={form.clase}
             onChange={(e) => setForm({ ...form, clase: e.target.value })}>
             {['2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
           </select>
@@ -105,7 +112,10 @@ function EditPiezaRow({ pieza, index, entradaId, onSaved, onCancel }: {
         }
         {(['verde','estufa'] as const).map((field) => (
               <td key={field} className="py-2 pr-2">
-                <input className={input} type="number" step="1" value={form[field]}
+                <input
+                  id={`edit-pieza-${pieza.id}-${field}`}
+                  name={`edit-pieza-${field}`}
+                  className={input} type="number" step="1" value={form[field]}
                   onChange={(e) => setForm({ ...form, [field]: e.target.value })} />
               </td>
             )
@@ -374,11 +384,18 @@ function PiezasModal({ entrada, onClose }: { entrada: any; onClose: () => void }
                           <tr className="border-b border-emerald-100 bg-emerald-50">
                             <td className="font-lexend text-[12px] text-emerald-600 py-2 pr-2">+</td>
                             <td className="py-2 pr-2">
-                              <input className={inputCls} placeholder="Grueso" value={addForm.grueso}
+                              <input
+                                id="add-pieza-grueso"
+                                name="add-pieza-grueso"
+                                className={inputCls} placeholder="Grueso" value={addForm.grueso}
                                 onChange={(e) => setAddForm({ ...addForm, grueso: e.target.value })} />
                             </td>
                             <td className="py-2 pr-2">
-                              <select className={inputCls} value={addForm.clase}
+                              <select
+                                id="add-pieza-clase"
+                                name="add-pieza-clase"
+                                aria-label="Clase de pieza"
+                                className={inputCls} value={addForm.clase}
                                 onChange={(e) => setAddForm({ ...addForm, clase: e.target.value })}>
                                 {['2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
                               </select>
@@ -390,7 +407,10 @@ function PiezasModal({ entrada, onClose }: { entrada: any; onClose: () => void }
                               {field: 'estufa',type: 'number', step: '1'},
                             ] as const).map(({ field, step }) => (
                                   <td key={field} className="py-2 pr-2">
-                                    <input className={inputCls} type="number" step={step}
+                                    <input
+                                      id={`add-pieza-${field}`}
+                                      name={`add-pieza-${field}`}
+                                      className={inputCls} type="number" step={step}
                                       placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                                       value={addForm[field]}
                                       onChange={(e) => setAddForm({ ...addForm, [field]: e.target.value })} />

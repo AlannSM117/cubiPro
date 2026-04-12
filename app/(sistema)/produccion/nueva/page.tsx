@@ -103,6 +103,8 @@ function PiezaRow({
     <tr className="border-b border-[#e0e4e3] last:border-0 hover:bg-gray-400/10 transition-colors group">
       <td className="py-3 px-1 sm:px-2">
         <input
+          id={`pieza-${pieza.id}-grueso`}
+          name="pieza-grueso"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][0] = el; }}
           type="text" value={pieza.grueso} placeholder="1 1/2" className={inputCls}
           onChange={(e) => onChangeField(pieza.id, 'grueso', e.target.value)}
@@ -111,6 +113,9 @@ function PiezaRow({
       </td>
       <td className="py-3 px-1 sm:px-2">
         <select
+          id={`pieza-${pieza.id}-clase`}
+          name="pieza-clase"
+          aria-label="Clase de pieza"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][1] = el; }}
           value={pieza.clase} className={inputCls}
           onChange={(e) => onChangeField(pieza.id, 'clase', e.target.value)}
@@ -121,6 +126,8 @@ function PiezaRow({
       </td>
       <td className="py-3 px-1 sm:px-2">
         <input
+          id={`pieza-${pieza.id}-ancho`}
+          name="pieza-ancho"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][2] = el; }}
           type="number" step="0.01" value={pieza.ancho} placeholder="0.00" className={inputCls}
           onChange={(e) => handleDecimalInput(e, 2)}
@@ -129,6 +136,8 @@ function PiezaRow({
       </td>
       <td className="py-3 px-1 sm:px-2">
         <input
+          id={`pieza-${pieza.id}-largo`}
+          name="pieza-largo"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][3] = el; }}
           type="number" step="0.01" value={pieza.largo} placeholder="0.00" className={inputCls}
           onChange={(e) => handleDecimalInput(e, 3)}
@@ -137,6 +146,8 @@ function PiezaRow({
       </td>
       <td className="py-3 px-1 sm:px-2">
         <input
+          id={`pieza-${pieza.id}-verde`}
+          name="pieza-verde"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][4] = el; }}
           type="number" value={pieza.verde} placeholder="0" className={inputCls}
           onChange={(e) => onChangeField(pieza.id, 'verde', e.target.value)}
@@ -145,6 +156,8 @@ function PiezaRow({
       </td>
       <td className="py-3 px-1 sm:px-2">
         <input
+          id={`pieza-${pieza.id}-estufa`}
+          name="pieza-estufa"
           ref={(el) => { if (!inputRefs.current[index]) inputRefs.current[index] = []; inputRefs.current[index][5] = el; }}
           type="number" value={pieza.estufa} placeholder="0" className={inputCls}
           onChange={(e) => onChangeField(pieza.id, 'estufa', e.target.value)}

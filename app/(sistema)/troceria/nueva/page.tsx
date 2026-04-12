@@ -102,6 +102,8 @@ function TrozaRow({
       {FIELDS.map((field, colIdx) => (
             <td key={field} className="font-lexend font-normal py-3 text-[12px] text-[#0A2C25] px-2">
               <input
+                id={`troza-${troza.id}-${field}`}
+                name={`troza-${field}`}
                 ref={(el) => {
                     if (!inputRefs.current[index]) inputRefs.current[index] = [];
                     inputRefs.current[index][colIdx] = el;

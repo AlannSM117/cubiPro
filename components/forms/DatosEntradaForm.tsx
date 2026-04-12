@@ -7,32 +7,22 @@ interface DatosEntradaFormProps {
   turno: string;
   onFechaChange: (date: Date) => void;
   onTurnoChange: (turno: string) => void;
-  /** Solo trocería usa origen */
   origen?: string;
   onOrigenChange?: (origen: string) => void;
-  /** Solo trocería usa clase */
   clase?: string;
   onClaseChange?: (clase: string) => void;
 }
 
 const inputCls =
   'w-full px-2 font-lexend font-normal py-4 text-[13px] text-[#0A2C25] ' +
-  'border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent'
-;
+  'border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent';
 
 const labelCls = 'block font-lexend font-medium text-left text-[14px] text-[#839590] pb-3';
 
 export function DatosEntradaForm({
-  fecha,
-  turno,
-  onFechaChange,
-  onTurnoChange,
-  origen,
-  onOrigenChange,
-  clase,
-  onClaseChange,
+  fecha, turno, onFechaChange, onTurnoChange,
+  origen, onOrigenChange, clase, onClaseChange,
 }: DatosEntradaFormProps) {
-  // Convierte Date "YYYY-MM-DD" para el input type="date"
   const fechaValue = [
     fecha.getFullYear(),
     String(fecha.getMonth() + 1).padStart(2, '0'),
@@ -47,7 +37,6 @@ export function DatosEntradaForm({
     onFechaChange(next);
   }
 
-  // Producción no tiene origen/clase, así que las columnas cambian
   const isTroceria = origen !== undefined;
   const gridCols = isTroceria ? 'grid-cols-4' : 'grid-cols-3';
 
@@ -58,34 +47,41 @@ export function DatosEntradaForm({
       </h2>
 
       <div className={`grid ${gridCols} gap-6`}>
+
         {/* Fecha */}
         <div>
-          <label className={labelCls}>Fecha</label>
+          <label htmlFor="entrada-fecha" className={labelCls}>Fecha</label>
           <input
+            id="entrada-fecha"
+            name="entrada-fecha"
             type="date"
             value={fechaValue}
             onChange={handleFechaChange}
-            className={inputCls}/>
+            className={inputCls}
+          />
         </div>
 
         {/* Turno */}
         <div>
-          <label className={labelCls}>Turno</label>
+          <label htmlFor="entrada-turno" className={labelCls}>Turno</label>
           <select
+            id="entrada-turno"
+            name="entrada-turno"
             value={turno}
             onChange={(e) => onTurnoChange(e.target.value)}
-            className={inputCls}>
+            className={inputCls}
+          >
             <option value="Matutino">Matutino</option>
             <option value="Vespertino">Vespertino</option>
             <option value="Nocturno">Nocturno</option>
           </select>
         </div>
 
-        {/* Aserradero (solo lectura, derivado del turno) */}
+        {/* Aserradero — solo producción (solo lectura, no necesita id/name) */}
         {!isTroceria && (
           <div>
-            <label className={labelCls}>Aserradero</label>
-            <div className="w-full px-2 font-lexend py-3 text-[#0A2C25] border border-gray-300 rounded-lg">
+            <p className={labelCls}>Aserradero</p>
+            <div aria-label="Aserradero" className="w-full px-2 font-lexend py-3 text-[#0A2C25] border border-gray-300 rounded-lg">
               <span className="font-lexend font-medium text-[13px] text-[#839590]">
                 {TURNO_ASERRADERO[turno]}
               </span>
@@ -93,33 +89,40 @@ export function DatosEntradaForm({
           </div>
         )}
 
-        {/* Origen Solo trocería */}
+        {/* Origen — solo trocería */}
         {isTroceria && onOrigenChange && (
           <div>
-            <label className={labelCls}>Origen</label>
+            <label htmlFor="entrada-origen" className={labelCls}>Origen</label>
             <select
+              id="entrada-origen"
+              name="entrada-origen"
               value={origen}
               onChange={(e) => onOrigenChange(e.target.value)}
-              className={inputCls}>
+              className={inputCls}
+            >
               <option value="S">S</option>
               <option value="M">M</option>
             </select>
           </div>
         )}
 
-        {/* Clase Solo trocería */}
+        {/* Clase — solo trocería */}
         {isTroceria && onClaseChange && (
           <div>
-            <label className={labelCls}>Clase</label>
+            <label htmlFor="entrada-clase" className={labelCls}>Clase</label>
             <select
+              id="entrada-clase"
+              name="entrada-clase"
               value={clase}
               onChange={(e) => onClaseChange(e.target.value)}
-              className={inputCls}>
+              className={inputCls}
+            >
               <option value="1">1</option>
               <option value="2">2</option>
             </select>
           </div>
         )}
+
       </div>
     </div>
   );

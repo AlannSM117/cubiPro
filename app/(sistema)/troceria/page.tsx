@@ -75,7 +75,10 @@ function EditRow({ troza, index, entradaId, onSaved, onCancel }: {
         <td className="font-lexend text-[13px] text-[#839590] py-2 pr-2">{index + 1}</td>
         {(['diametro1','diametro2','largo','descuento'] as const).map((field, i) => (
               <td key={field} className="py-2 pr-2 min-w-[80px]">
-                <input className={input} value={form[field]}
+                <input
+                  id={`edit-troza-${troza.id}-${field}`}
+                  name={`edit-troza-${field}`}
+                  className={input} value={form[field]}
                   onChange={(e) => setForm({ ...form, [field]: e.target.value })}
                   type="number" step={i < 2 ? '0.1' : '0.01'} />
               </td>
@@ -336,7 +339,10 @@ function TrozasModal({ entrada, onClose }: { entrada: any; onClose: () => void }
                               { field: 'descuento', step: '0.01' },
                             ].map(({ field, step }) => (
                                   <td key={field} className="py-2 pr-2">
-                                    <input className={inputCls} type="number" step={step}
+                                    <input
+                                      id={`add-troza-${field}`}
+                                      name={`add-troza-${field}`}
+                                      className={inputCls} type="number" step={step}
                                       value={addForm[field as keyof TrozaForm]}
                                       onChange={(e) => setAddForm({ ...addForm, [field]: e.target.value })}  />
                                   </td>

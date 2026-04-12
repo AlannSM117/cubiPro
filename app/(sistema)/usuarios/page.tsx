@@ -191,8 +191,10 @@ export default function UsuariosPage() {
 
         <div className="grid grid-cols-3 gap-4 items-end">
           <div>
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Nombre(s)</label>
+            <label htmlFor="nuevo-nombres" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Nombre(s)</label>
             <input
+              id="nuevo-nombres"
+              name="nuevo-nombres"
               type="text"
               value={nombres}
               onChange={(e) => setNombres(e.target.value)}
@@ -201,8 +203,10 @@ export default function UsuariosPage() {
             />
           </div>
           <div>
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Apellidos</label>
+            <label htmlFor="nuevo-apellidos" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Apellidos</label>
             <input
+              id="nuevo-apellidos"
+              name="nuevo-apellidos"
               type="text"
               value={apellidos}
               onChange={(e) => setApellidos(e.target.value)}
@@ -211,8 +215,10 @@ export default function UsuariosPage() {
             />
           </div>
           <div>
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Nombre de usuario</label>
+            <label htmlFor="nuevo-username" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Nombre de usuario</label>
             <input
+              id="nuevo-username"
+              name="nuevo-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -221,9 +227,12 @@ export default function UsuariosPage() {
             />
           </div>
           <div>
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Contraseña</label>
+            <label htmlFor="nuevo-password" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Contraseña</label>
             <div className="relative">
               <input
+                id="nuevo-password"
+                name="nuevo-password"
+                autoComplete="new-password"
                 type={showPwd ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -236,9 +245,12 @@ export default function UsuariosPage() {
             </div>
           </div>
           <div>
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Repetir contraseña</label>
+            <label htmlFor="nuevo-repeat-password" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Repetir contraseña</label>
             <div className="relative">
               <input
+                id="nuevo-repeat-password"
+                name="nuevo-repeat-password"
+                autoComplete="new-password"
                 type={showRepeatPwd ? "text" : "password"}
                 value={repeatPassword}
                 onChange={(e) => setRepeatPassword(e.target.value)}
@@ -254,8 +266,10 @@ export default function UsuariosPage() {
 
         <div className="flex justify-between items-end mt-6">
           <div className="w-1/5 pr-4">
-            <label className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Rol</label>
+            <label htmlFor="nuevo-role" className="block font-lexend font-medium text-left text-[14px] text-[#839590] mb-2">Rol</label>
             <select
+              id="nuevo-role"
+              name="nuevo-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-2 py-4 font-lexend font-normal border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -343,8 +357,10 @@ export default function UsuariosPage() {
 
                   <div className="space-y-5">
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre(s)</label>
+                      <label htmlFor="edit-nombres" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre(s)</label>
                       <input 
+                        id="edit-nombres"
+                        name="edit-nombres"
                         type="text" 
                         value={editNombres} 
                         onChange={(e)=>setEditNombres(e.target.value)} 
@@ -352,8 +368,10 @@ export default function UsuariosPage() {
                       />
                     </div>
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Apellidos</label>
-                      <input 
+                      <label htmlFor="edit-apellidos" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Apellidos</label>
+                      <input
+                        id="edit-apellidos"
+                        name="edit-apellidos"
                         type="text" 
                         value={editApellidos} 
                         onChange={(e)=>setEditApellidos(e.target.value)} 
@@ -361,8 +379,10 @@ export default function UsuariosPage() {
                       />
                     </div>
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre de usuario</label>
-                      <input 
+                      <label htmlFor="edit-username" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nombre de usuario</label>
+                      <input
+                        id="edit-username"
+                        name="edit-username"
                         type="text" 
                         value={editUsername} 
                         onChange={(e)=>setEditUsername(e.target.value)} 
@@ -370,8 +390,10 @@ export default function UsuariosPage() {
                       />
                     </div>
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Rol</label>
-                      <select 
+                      <label htmlFor="edit-role" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Rol</label>
+                      <select
+                        id="edit-role"
+                        name="edit-role"
                         value={editRole} 
                         onChange={(e)=>setEditRole(e.target.value)} 
                         className="w-full px-4 py-3 text-[#0A2C25] font-lexend font-normal border border-[#DCE4DF] rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-[#039343] outline-none transition-all"
@@ -400,9 +422,12 @@ export default function UsuariosPage() {
                     </div>
 
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nueva contraseña</label>
+                      <label htmlFor="edit-new-password" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Nueva contraseña</label>
                       <div className="relative">
-                        <input 
+                        <input
+                          id="edit-new-password"
+                          name="edit-new-password"
+                          autoComplete="new-password"
                           type={editShowNewPwd ? "text" : "password"} 
                           value={editNewPassword} 
                           onChange={(e)=>setEditNewPassword(e.target.value)} 
@@ -419,9 +444,12 @@ export default function UsuariosPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Confirmar contraseña nueva</label>
+                      <label htmlFor="edit-confirm-password" className="block font-lexend font-medium text-[13px] text-[#839590] mb-1.5 ml-1">Confirmar contraseña nueva</label>
                       <div className="relative">
-                        <input 
+                        <input
+                          id="edit-confirm-password"
+                          name="edit-confirm-password"
+                          autoComplete="new-password"
                           type={editShowRepNewPwd ? "text" : "password"} 
                           value={editRepeatNewPassword} 
                           onChange={(e)=>setEditRepeatNewPassword(e.target.value)} 
